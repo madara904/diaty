@@ -1,6 +1,6 @@
 import { Button, buttonVariants } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
-import { Activity, Apple, Droplet } from "lucide-react";
+import { Activity, Apple, Droplet, DropletIcon } from "lucide-react";
 import Link from "next/link";
 
 const perks = [
@@ -22,7 +22,7 @@ const perks = [
   },
   {
     Icon: {
-      img: Droplet,
+      img: DropletIcon,
       color: "text-red-600"},
     description:
       "Appropriate calculations for your diabetical portions",
@@ -37,10 +37,10 @@ export default function Home() {
     <span className="relative text-primary">diaty</span>
   </span> and start your healthy journey today!</h1>
 
-      <div className="sm:flex pt-28 ml-8 md:justify-between font-medium text-start">
+      <div className="sm:flex pt-28 md:justify-between font-medium text-start">
       {perks.map((perk) => 
       <div key={perk.description}
-      className="flex"
+      className="flex min-w-[350px]"
       >
         {<perk.Icon.img className={cn("mr-3 mb-5", perk.Icon.color)} />}
       <div>{perk.description}</div>
