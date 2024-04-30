@@ -40,7 +40,7 @@ export default function Home() {
       <div className="sm:flex pt-28 md:justify-between font-medium text-start">
       {perks.map((perk) => 
       <div key={perk.description}
-      className="flex min-w-[350px]"
+      className="flex sm:min-w-[350px] md:min-w-0"
       >
         {<perk.Icon.img className={cn("mr-3 mb-5", perk.Icon.color)} />}
       <div>{perk.description}</div>
