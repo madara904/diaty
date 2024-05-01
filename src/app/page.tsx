@@ -37,17 +37,17 @@ export default function Home() {
     <span className="relative text-primary">diaty</span>
   </span> and start your healthy journey today!</h1>
 
-      <div className="sm:flex pt-28 md:justify-between font-medium text-start">
+      <div className="sm:flex mt-24 font-medium text-start md:gap-12 justify-between">
       {perks.map((perk) => 
       <div key={perk.description}
-      className="flex sm:min-w-[350px] md:min-w-0"
+      className="flex"
       >
-        {<perk.Icon.img className={cn("mr-3 mb-5", perk.Icon.color)} />}
-      <div>{perk.description}</div>
+        {<perk.Icon.img className={cn("min-w-6 min-h-6", perk.Icon.color)} />}
+      <div className="ml-3 mb-5">{perk.description}</div>
       </div>)}
   
       </div>
-      <div className="mt-24">
+      <div className="mt-12 md:mt-36">
       <div className='flex flex-col sm:flex-row sm:justify-center gap-4'>
             <Link
               href='/sign-in'
