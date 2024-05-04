@@ -1,7 +1,8 @@
-import { Button, buttonVariants } from "@/components/ui/Button";
+
 import { cn } from "@/lib/utils";
-import { Activity, Apple, Droplet, DropletIcon } from "lucide-react";
+import { Activity, Apple, DropletIcon } from "lucide-react";
 import Link from "next/link";
+import { buttonVariants } from "@/components/ui/Button";
 
 const perks = [
   {
@@ -31,9 +32,9 @@ const perks = [
 
 export default function Home() {
   return (
-    <div className="mt-10 text-center relative">
+    <div className="mt-10 text-center">
       <h1 className="text-7xl md:text-7xl -z-10 relative text-balance">Discover   
-      <span className="before:block before:absolute before:-inset-2 before:translate-x-4 before:bg-violet-500 before:w-40 relative inline-block z-0">
+      <span className="before:block before:absolute before:-inset-1 before:translate-x-4 before:bg-violet-500 before:w-40 relative inline-block z-0">
     <span className="relative text-primary">diaty</span>
   </span> and start your healthy journey today!</h1>
 
@@ -54,9 +55,10 @@ export default function Home() {
               className={cn(buttonVariants(), "font-semibold")}>
               Get Started
             </Link>
-            <Button variant='ghost'>
+            <Link href='/dashboard'
+              className={cn(buttonVariants({variant: "ghost"}), "font-semibold")}>
               Browse Foods &rarr;
-            </Button>
+            </Link>
           </div>
       </div>
     </div>

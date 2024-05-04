@@ -1,33 +1,30 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { buttonVariants } from "../ui/Button";
+import { auth, signIn } from "@/auth";
+import UserButton from "./UserButton";
+import { useSession } from "next-auth/react";
 
 
 
-export default function NavBarCreds (){
+export default function NavBarCreds() {
+
+  const session = useSession();
+  const user = session.data?.user;
+
     return(
-    <>
-    <div className="m-4">
-    <Link href={"/sign-in"} className={cn(buttonVariants({variant: "violet"}), " hover:text-zinc-100")}>Sign in</Link>
-    </div>
-    </>
+      <>
+        <div className="pt-2 m-2">
+            {user && <UserButton user={user} />}
+            {!user && session.status !== "loading" && <SignInButton />}
+        </div>
+      </>
     );
     
 }
 
-
-{ /*         
-<DropdownMenu>
-    <DropdownMenuTrigger>
-    <Avatar className="mr-8">
-      <AvatarImage/>
-      <AvatarFallback >BG</AvatarFallback>
-    </Avatar>
-  </DropdownMenuTrigger>
-  <DropdownMenuContent>
-    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-    <DropdownMenuSeparator />
-    <DropdownMenuItem onClick={quickLoginFC}>Sign out</DropdownMenuItem>
-  </DropdownMenuContent>
-</DropdownMenu>
-*/}
+function SignInButton () {
+  return (
+    <Link href={"/sign-in"} className={cn(buttonVariants({variant: "violet"}), " hover:text-zinc-100")}>Sign in</Link>
+  )
+}

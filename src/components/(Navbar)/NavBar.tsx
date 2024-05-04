@@ -37,7 +37,7 @@ export default function NavBar() {
     return (
         <>
         <div className={`fixed top-0 inset-x-0 w-screen ${!showBackground ? "bg-white"  : "backdrop-blur bg-white/80"} border-b border-zinc-300 z-[10] shadow-sm`}>
-          <div className="container max-w-7xl h-[90px] mx-auto flex items-center justify-between gap-2">
+          <div className="container max-w-7xl h-[80px] mx-auto flex items-center justify-between gap-2">
         <Link href={"/"} className={cn("text-6xl m-3 text-foreground hover:opacity-80", ephesis.className)}>diaty</Link>
         <NavBarCreds />
       </div>
