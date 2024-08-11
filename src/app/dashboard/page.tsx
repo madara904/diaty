@@ -1,5 +1,7 @@
 import { signIn, auth, providerMap } from "@/auth"
 import { redirect } from "next/navigation";
+import Home from "./Home";
+
 
 const Dashboard = async () => {
   const session = await auth();
@@ -10,7 +12,7 @@ const Dashboard = async () => {
   } 
 
   return (
-    <div className="mt-12 text-3xl font-medium">Dashboard</div>
+    <Home/> 
   )
 }
 

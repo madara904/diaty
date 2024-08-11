@@ -25,6 +25,6 @@ export default function NavBarCreds() {
 
 function SignInButton () {
   return (
-    <Link href={"/sign-in"} className={cn(buttonVariants({variant: "violet"}), " hover:text-zinc-100")}>Sign in</Link>
+    <Link href={"/sign-in"} className={cn(buttonVariants(), "bg-gray-800 text-primary hover:bg-gray-600")}>Sign in</Link>
   )
 }

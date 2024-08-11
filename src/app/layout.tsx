@@ -20,12 +20,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={cn("bg-back", inter.className)}>
+      <body className={cn( inter.className)}>
       {/* Need to apply styles for body in a child div to avoid shifting of layout
        cuz shadcn is ein hurensohn amk*/}
        <SessionProvider>
         <NavBar />
-        <div className="container max-w-7xl mx-auto pt-32 min-h-96 sm:min-h-screen antialiased light">
+        <div className="container max-w-7xl mx-auto pt-32 sm:min-h-screen antialiased light">
           {children}
         </div>
       <Footer />

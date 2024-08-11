@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link";
-import { Ephesis } from "next/font/google";
+import { Ephesis, Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import NavBarCreds from "./NavBarCreds";
@@ -9,6 +9,12 @@ import NavBarCreds from "./NavBarCreds";
 const ephesis = Ephesis({
   weight: "400",
   subsets: ["latin"]
+})
+
+export const inter = Inter({
+  weight: "200",
+  subsets: ["latin"],
+  style: "normal"
 })
 
 export default function NavBar() {
@@ -36,9 +42,9 @@ export default function NavBar() {
 
     return (
         <>
-        <div className={`fixed top-0 inset-x-0 w-screen ${!showBackground ? "bg-white"  : "backdrop-blur bg-white/80"} border-b border-zinc-300 z-[10] shadow-sm`}>
+        <div className={`fixed top-0 inset-x-0 w-screen ${!showBackground ? "bg-white"  : "backdrop-blur bg-white/90"} border-b border-zinc-300 z-[10] shadow-sm`}>
           <div className="container max-w-7xl h-[80px] mx-auto flex items-center justify-between gap-2">
-        <Link href={"/"} className={cn("text-6xl m-3 text-foreground hover:opacity-80", ephesis.className)}>diaty</Link>
+        <Link href={"/"} className={cn("text-4xl m-3 text-foreground hover:opacity-80 font-normal", inter.className)}>diaty</Link>
         <NavBarCreds />
       </div>
         </div>

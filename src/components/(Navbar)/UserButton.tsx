@@ -21,7 +21,6 @@ interface UserButtonProps {
 
 export default function UserButton({ user }: UserButtonProps) {
 
-  console.log(user.name)
 
   return (
     <DropdownMenu>

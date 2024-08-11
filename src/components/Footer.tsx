@@ -1,16 +1,16 @@
-import { HeartIcon } from "lucide-react"
+import { Github, HeartIcon } from "lucide-react"
 
 const Footer = () => {
   return (
     <>
-    <footer className=" flex flex-col mt-14 sm:-mt-14">
-    <hr className="dark:border-gray-700 w-1/2 self-center"/>
-      <div className="flex justify-center gap-1 text-xs font-bold h-12 items-center">
-      <span>made with</span>
-      <HeartIcon size={16} color="black" strokeWidth="1" fill="violet" />
-      <span>in my crib :)</span>
+    <footer className="flex flex-col mt-15 sm:-mt-14">
+    <hr className="dark:border-gray-700 w-full self-center"/>
+      <div className="flex justify-center text-xs font-bold h-12 items-center">
+      <Github size={30} color="" strokeWidth="1" fill="gray" className="mt-1 hover:opacity-80 cursor-pointer"/>
+      <span></span>
       </div>
-    </footer></>
+    </footer>
+    </>
   )
 }
 
