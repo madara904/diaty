@@ -34,10 +34,11 @@ const perks = [
 export default function Home() {
   return (
     <div className="mt-5 text-center">
-      <h1 className="text-7xl md:text-8xl relative text-balance font-serif">Discover   
+      <h1 className="text-7xl md:text-8xl relative text-balance font-serif"><span>Discover </span>   
       <span className="before:block before:absolute before:-inset-1 before:translate-x-4 before:bg-gray-600 before:w-40 relative inline-block z-0">
-    <span className={cn("relative text-primary", inter.className)}>diaty</span>
-    </span> and start your healthy journey today!</h1>
+    <span className={cn("relative text-primary", inter.className)}> diaty</span>
+    </span> and start your healthy journey today!
+    </h1>
 
       <div className="sm:flex mt-20 font-normal text-start justify-between">
       {perks.map((perk) => 
