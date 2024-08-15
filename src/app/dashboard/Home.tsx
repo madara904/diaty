@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Home, User, Settings, LogOut } from 'lucide-react'; 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/Button";
+import { OverviewChart } from "./ui/overview-chart";
 
 const DashboardLayout: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -72,6 +73,9 @@ const DashboardLayout: React.FC = () => {
           &#9776;
         </button>
         <h1 className="text-3xl font-bold mb-6">Overview</h1>
+
+        <OverviewChart />
+
       </main>
     </div>
   );
