@@ -52,7 +52,7 @@ const DashboardLayout: React.FC = () => {
             </CardHeader>
     <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
       <Button size="sm" className="w-full group">
-        Upgrade <span className="ml-1 group-hover:text-white group-hover:ml-3">&rarr;</span>
+        Upgrade <span className="ml-2 rotate-[320deg] -translate-y-0.5 group-hover:translate- group-hover:text-white group-hover:rotate-[360deg] transition-all text-sm">&rarr;</span>
       </Button>
     </CardContent>
   </Card>

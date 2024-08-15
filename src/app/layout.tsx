@@ -20,17 +20,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={cn( inter.className)}>
-      {/* Need to apply styles for body in a child div to avoid shifting of layout
-       cuz shadcn is ein hurensohn amk*/}
+      <body className={cn(inter.className)}>
        <SessionProvider>
-        <NavBar />
-        <div className="container max-w-7xl mx-auto pt-32 sm:min-h-screen antialiased light">
+       <NavBar />
+        <div className="container max-w-7xl mx-auto pt-24 sm:min-h-screen antialiased light">
           {children}
-        </div>
+          </div>
       <Footer />
       </SessionProvider>
       </body>
     </html>
   );
 }
+
