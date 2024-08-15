@@ -13,7 +13,6 @@ const DashboardLayout: React.FC = () => {
 
   return (
     <div className="flex text-sm min-h-[600px] gap-3">
-      {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 bg-gray-800 text-primary transform ${
           isSidebarOpen ? "translate-x-0 pt-20  " : "-translate-x-full"
@@ -60,9 +59,8 @@ const DashboardLayout: React.FC = () => {
         </div>
       </aside>
 
-      {/* Content Area */}
       <main
-        className={`flex-1 p-6 border-dotted border border-gray transition-all duration-300 ${
+        className={`flex-1 p-6  transition-all duration-300 ${
           isSidebarOpen ? "ml-56 min-h-[560px]" : "ml-0"
         }`}
       >
@@ -73,9 +71,7 @@ const DashboardLayout: React.FC = () => {
           &#9776;
         </button>
         <h1 className="text-3xl font-bold mb-6">Overview</h1>
-
         <OverviewChart />
-
       </main>
     </div>
   );

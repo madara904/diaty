@@ -1,8 +1,7 @@
 "use client"
-import { TrendingUp } from "lucide-react"
 import { Label, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts"
 import { format, addDays, subDays } from 'date-fns';
-import { CircleArrowLeft, CircleArrowRight } from 'lucide-react';
+import {  ChevronLeft , ChevronRight } from 'lucide-react';
 import {
   Card,
   CardContent,
@@ -39,36 +38,33 @@ export function OverviewChart() {
 
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
 
-  // Function to move to the previous day
   const handlePrevDay = () => {
     setCurrentDate((prevDate) => subDays(prevDate, 1));
   };
 
-  // Function to move to the next day
   const handleNextDay = () => {
     setCurrentDate((prevDate) => addDays(prevDate, 1));
   };
 
-  // Format the date to display it nicely
   const formattedDate = format(currentDate, 'MMMM dd, yyyy');
 
   return (
 
     <>
-    <div className="flex w-full justify-end">
-      <CircleArrowLeft
+    <div className="flex justify-end pb-1">
+      <ChevronLeft
         onClick={handlePrevDay}
         style={{ cursor: 'pointer' }}
-        size={24} />
-      <CircleArrowRight
+        size={26} />
+      <ChevronRight
         onClick={handleNextDay}
         style={{ cursor: 'pointer' }}
-        size={24} />
+        size={26} />
     </div>
     <Card className="flex flex-col">
         <CardHeader className="items-center pb-0">
           <CardTitle>Your Intakes</CardTitle>
-          <span>{formattedDate}</span>
+          <CardDescription>{formattedDate}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-1 items-center pb-0">
           <ChartContainer
