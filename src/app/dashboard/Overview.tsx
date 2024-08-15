@@ -17,7 +17,7 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 import { useState } from "react"
-const chartData = [{ Daily: 1260, Actual: 570 }]
+const chartData = [{ Daily: 1260, Actual: 570, date: (new Date()) }]
 const chartConfig = {
   desktop: {
     label: "Desktop",
@@ -31,7 +31,7 @@ const chartConfig = {
 
 
 
-export function OverviewChart() {
+export function Overview() {
   
 
   const totalIntakes = chartData[0].Daily - chartData[0].Actual
@@ -54,11 +54,11 @@ export function OverviewChart() {
     <div className="flex justify-end pb-1">
       <ChevronLeft
         onClick={handlePrevDay}
-        style={{ cursor: 'pointer' }}
+        className="cursor-pointer hover:opacity-50"
         size={26} />
       <ChevronRight
         onClick={handleNextDay}
-        style={{ cursor: 'pointer' }}
+        className="cursor-pointer hover:opacity-50"
         size={26} />
     </div>
     <Card className="flex flex-col">
@@ -77,9 +77,6 @@ export function OverviewChart() {
               innerRadius={80}
               outerRadius={130}
             >
-              <ChartTooltip
-                cursor={false}
-                content={<ChartTooltipContent hideLabel />} />
               <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
                 <Label
                   content={({ viewBox }) => {
