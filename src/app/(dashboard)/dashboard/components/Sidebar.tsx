@@ -6,8 +6,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { usePathname } from 'next/navigation'
-import { cn } from "@/lib/utils";
-import { link } from "fs";
 
 
 interface SidebarItem {
