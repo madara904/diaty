@@ -8,8 +8,6 @@ import Footer from "@/components/Footer";
 
 const inter = Inter({ subsets: ["latin"] });
 
-const showNavLogo = true;
-
 export const metadata: Metadata = {
   title: "diaty - proper tracking your intakes!",
   description: "For those who want to make a change!",
