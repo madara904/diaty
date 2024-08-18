@@ -62,10 +62,10 @@ const Sidebar: React.FC = (  ) => {
               key={item.id}
               href={item.link}
               className={`mb-4 flex items-center space-x-3 cursor-pointer p-2 rounded-md 
-                ${isActive(item.link) ? 'bg-primary text-black hover' : ''}`}
+                ${isActive(item.link) ? 'bg-primary text-black hover:text-black' : ''}`}
             >
               {item.icon}
-              <span className="hover:text-white">{item.label}</span>
+              <span>{item.label}</span>
             </Link>
                       ))}
                     </ul>
