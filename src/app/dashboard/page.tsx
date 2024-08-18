@@ -1,6 +1,7 @@
 import { signIn, auth, providerMap } from "@/auth"
 import { redirect } from "next/navigation";
 import Home from "./Home";
+import Sidebar from "./components/Sidebar";
 
 
 const Dashboard = async () => {
@@ -12,7 +13,9 @@ const Dashboard = async () => {
   } 
 */
   return (
-    <Home/> 
+    <>
+    <Home />
+    </> 
   )
 }
 

@@ -20,10 +20,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={cn(inter.className)}>
+      <body className={cn("absolute inset-0 -z-10 size-full bg-white-50 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]" ,inter.className)}>
        <SessionProvider>
        <NavBar />
-        <div className="container max-w-7xl mx-auto pt-24 sm:min-h-screen antialiased light">
+        <div className="container max-w-7xl mx-auto pt-24 sm:min-h-screen antialiased light ">
           {children}
           </div>
       <Footer />
