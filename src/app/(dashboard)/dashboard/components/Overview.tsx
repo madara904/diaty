@@ -1,5 +1,4 @@
 "use client"
-import { Label, PolarRadiusAxis, RadialBar, RadialBarChart } from "recharts"
 import { format, addDays, subDays } from 'date-fns';
 import {  ChevronLeft , ChevronRight } from 'lucide-react';
 import {
@@ -12,21 +11,21 @@ import {
 } from "@/components/ui/card"
 import {
   ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart"
 import { useState } from "react"
-import Chart from "./components/Chart";
+import Chart from "./Chart";
+
+
 const chartData = [{ Daily: 1260, Actual: 570, date: (new Date()) }]
+
 const chartConfig = {
   desktop: {
     label: "Desktop",
-    color: "hsl(var(--chart-1))",
+    color: "green",
   },
   mobile: {
     label: "Mobile",
-    color: "hsl(var(--chart-2))",
+    color: "secondary",
   },
 } satisfies ChartConfig
 
@@ -35,7 +34,7 @@ const chartConfig = {
 export function Overview() {
   
 
-  const totalIntakes = chartData[0].Daily - chartData[0].Actual
+  const totalIntakes =  chartData[0].Daily - chartData[0].Actual
 
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
 
@@ -52,32 +51,42 @@ export function Overview() {
   return (
 
     <>
-    <Card className="flex-1">
-    <div className="flex justify-end p-3">
-      <ChevronLeft
-        onClick={handlePrevDay}
-        className="cursor-pointer hover:opacity-50"
-        size={26} />
-      <ChevronRight
-        onClick={handleNextDay}
-        className="cursor-pointer hover:opacity-50"
-        size={26} />
-    </div>
+    <h1 className='mt-24 text-4xl font-medium'>Overview</h1>
+    <div className='md:flex mt-4 gap-4'>
+      <Card className="flex-1 shadow-md md:w-1/2 mb-5 sm:m-0">
+        <div className="flex justify-end m-3">
+          <ChevronLeft
+            onClick={handlePrevDay}
+            className="cursor-pointer hover:opacity-50"
+            size={26} />
+          <ChevronRight
+            onClick={handleNextDay}
+            className="cursor-pointer hover:opacity-50"
+            size={26} />
+        </div>
         <CardHeader className="items-center p-0">
           <CardTitle>Your Intakes</CardTitle>
           <CardDescription>{formattedDate}</CardDescription>
         </CardHeader>
         <CardContent className="items-center">
 
-          <Chart 
-          chartConfig={chartConfig} 
-          chartData={chartData}
-          totalIntakes={totalIntakes} />
+          <Chart
+            chartConfig={chartConfig}
+            chartData={chartData}
+            totalIntakes={totalIntakes} />
 
         </CardContent>
-        <CardFooter className="flex-col gap-2 text-sm">
-        </CardFooter>
       </Card>
+
+      <Card className="shadow-md md:w-1/2">
+        <CardHeader className="items-center ">
+          <CardTitle>Nutrition</CardTitle>
+          <CardDescription>{formattedDate}</CardDescription>
+        </CardHeader>
+      </Card>
+
+    </div>
     </>
+      
   )
 }

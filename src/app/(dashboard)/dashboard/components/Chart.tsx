@@ -33,7 +33,7 @@ const Chart = ( {chartConfig, chartData, totalIntakes} : ChartProps ) => {
   return (
     <ChartContainer
     config={chartConfig}
-    className="mx-auto aspect-square w-full max-w-[300px]"
+    className="mx-auto aspect-square w-full max-w-[200px]"
   >
     <RadialBarChart
       data={chartData}

@@ -1,7 +1,6 @@
 import { signIn, auth, providerMap } from "@/auth"
-import { redirect } from "next/navigation";
-import Home from "./Home";
-import Sidebar from "./components/Sidebar";
+import Home from ".";
+
 
 
 const Dashboard = async () => {

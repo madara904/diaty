@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "./globals.css";
 import { SessionProvider } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import NavBar from "@/components/(Navbar)/NavBar";
@@ -23,7 +22,7 @@ export default function RootLayout({
       <body className={cn("absolute inset-0 -z-10 size-full bg-white-50 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]" ,inter.className)}>
        <SessionProvider>
        <NavBar />
-        <div className="container max-w-7xl mx-auto pt-24 sm:min-h-screen antialiased light ">
+        <div className="container max-w-7xl mx-auto pt-24 sm:min-h-[854px] antialiased light">
           {children}
           </div>
       <Footer />
