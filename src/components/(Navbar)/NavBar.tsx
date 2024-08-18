@@ -17,11 +17,8 @@ export const inter = Inter({
   style: "normal"
 })
 
-interface NavBarProps {
-  showNavLogo: boolean
-}
 
-export default function NavBar( { showNavLogo } : NavBarProps) {
+export default function NavBar() {
 
     const [showBackground, setShowBackground] = useState(false)
 
