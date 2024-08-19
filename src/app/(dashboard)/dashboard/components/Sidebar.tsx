@@ -15,7 +15,7 @@ interface SidebarItem {
     icon: JSX.Element,
   }
 
-const Sidebar: React.FC = (  ) => {
+const Sidebar: React.FC = () => {
 
     const pathname = usePathname()
 

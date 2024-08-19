@@ -3,7 +3,7 @@ import { Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import NavBar from "@/components/(Navbar)/NavBar";
-import Footer from "@/components/Footer";
+import "@/app/(index)/globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,10 +25,8 @@ export default function RootLayout({
         <div className="container max-w-7xl mx-auto pt-24 sm:min-h-[854px] antialiased light">
           {children}
           </div>
-      <Footer />
       </SessionProvider>
       </body>
     </html>
   );
 }
-
