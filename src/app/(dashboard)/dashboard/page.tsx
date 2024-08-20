@@ -1,5 +1,6 @@
 import { signIn, auth, providerMap } from "@/auth"
 import Home from ".";
+import { Overview } from "./components/Overview";
 
 
 
@@ -13,7 +14,7 @@ const Dashboard = async () => {
 */
   return (
     <>
-    <Home />
+    <Overview />
     </> 
   )
 }

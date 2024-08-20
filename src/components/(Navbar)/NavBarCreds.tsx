@@ -14,7 +14,7 @@ export default function NavBarCreds() {
 
     return(
       <>
-        <div className="pt-2 m-2">
+        <div className="m-3">
             {user && <UserButton user={user} />}
             {!user && session.status !== "loading" && <SignInButton />}
         </div>
