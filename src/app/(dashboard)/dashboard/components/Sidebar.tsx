@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Home, User, Settings, LogOut, Menu, X } from "lucide-react";
+import { Home, User, Settings, LogOut, Menu, X, BookCheck } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
@@ -27,9 +27,10 @@ const Sidebar: React.FC = () => {
 
     const sidebarItems: SidebarItem[] = [
         { id: "overview", label: "Overview", link: "/dashboard", icon: <Home className="w-5 h-5" /> },
+        { id: "logout", label: "Diaty", link: "/dashboard/", icon: <BookCheck className="w-5 h-5" /> },
         { id: "profile", label: "Profile", link: "/dashboard/profile", icon: <User className="w-5 h-5" /> },
-        { id: "settings", label: "Settings", link: "/dashboard/settings", icon: <Settings className="w-5 h-5"  /> },
-        { id: "logout", label: "Logout", link: "/dashboard/", icon: <LogOut className="w-5 h-5" /> }
+        { id: "settings", label: "Settings", link: "/dashboard/settings", icon: <Settings className="w-5 h-5"  /> }
+
       ];
     const isActive = (path: string) => pathname === path;
 
@@ -78,9 +79,10 @@ const Sidebar: React.FC = () => {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="p-2 pt-0 md:p-4 md:pt-0">
-                            <Button size="sm" className="w-full group">
+                            <Link href={"/dashboard/settings"}><Button size="sm" className="w-full group">
                                 Upgrade <span className="ml-2 rotate-[320deg] -translate-y-0.5 group-hover:translate-y-0 group-hover:text-white group-hover:rotate-[360deg] transition-all text-sm">&rarr;</span>
                             </Button>
+                            </Link>
                         </CardContent>
                     </Card>}
                 </div>
