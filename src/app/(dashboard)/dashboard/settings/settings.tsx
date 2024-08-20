@@ -1,7 +1,7 @@
 "use client"
 
 import { Badge } from "@/components/ui/badge"
-import { Button, buttonVariants } from "@/components/ui/Button"
+import { Button } from "@/components/ui/Button"
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
 import { usePremium } from "@/context/Premium"
 
@@ -21,12 +21,13 @@ const SettingsPlan = () => {
         Change your Plan here
         </CardDescription>
         </div>
-        <CardContent>
+        <CardContent className="p-0">
         {isPremium ? 
         <Badge variant={"badge_premium"} className="bg-violet-500">Premium</Badge> 
         : 
-        <Badge variant={"destructive"}>Free</Badge>
+        <Badge variant={"destructive"} className="hover:bg-destructive/100">Free</Badge>
         }
+
         </CardContent>
         </CardHeader>
         </Card>
