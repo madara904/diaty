@@ -13,7 +13,7 @@ import {
   ChartConfig,
 } from "@/components/ui/chart"
 import { useState } from "react"
-import Chart from "./Chart";
+import Chart from "./ui/Chart";
 
 
 const chartData = [{ Daily: 1260, Actual: 570, date: (new Date()) }]
