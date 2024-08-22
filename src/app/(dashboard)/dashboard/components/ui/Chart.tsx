@@ -11,7 +11,6 @@ interface SimpleGaugeProps {
 const SimpleGauge: React.FC<SimpleGaugeProps> = ({ value, valueMin, valueMax, color }) => {
 
   const res = Math.min(valueMax, value)
-  console.log(res)
 
   return (
       <Gauge
