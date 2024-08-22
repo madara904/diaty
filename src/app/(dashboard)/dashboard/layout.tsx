@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import NavBar from "@/components/(Navbar)/NavBar";
 import Sidebar from "./components/Sidebar";
 import "@/app/(index)/globals.css";
-import { PremiumProvider } from '@/context/Premium';
+import { PremiumProvider } from "@/context/Premium";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,13 +21,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={cn("absolute inset-0 -z-10 size-full bg-white-50 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]" ,inter.className)}>
+      <body
+        className={cn(
+          "flex flex-col min-h-screen bg-white-50 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]",
+          inter.className
+        )}
+      >
         <SessionProvider>
           <PremiumProvider>
             <NavBar />
-            <div className="container mx-auto">
+            <div className="flex flex-1">
               <Sidebar />
-              {children}
+              <main className="flex-1 container mx-auto">{children}</main>
             </div>
           </PremiumProvider>
         </SessionProvider>
@@ -35,4 +40,3 @@ export default function RootLayout({
     </html>
   );
 }
-

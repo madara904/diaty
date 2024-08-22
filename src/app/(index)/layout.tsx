@@ -18,20 +18,17 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
-
   return (
     <html lang="en">
-      <body className={cn("absolute inset-0 -z-10 size-full bg-white-50 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]" ,inter.className)}>
-       <SessionProvider>
-       <NavBar />
-      <div className="container max-w-6xl mx-auto pt-24 sm:min-h-[854px] antialiased light ">
-      {children}
-      </div>
-      <Footer />
-      </SessionProvider>
+      <body className={cn("flex flex-col min-h-screen", inter.className)}>
+        <SessionProvider>
+          <NavBar />
+          <main className="flex-1 container max-w-6xl mx-auto pt-24 antialiased light">
+            {children}
+          </main>
+          <Footer />
+        </SessionProvider>
       </body>
     </html>
   );
 }
-
