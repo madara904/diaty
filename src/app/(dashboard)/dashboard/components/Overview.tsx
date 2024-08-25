@@ -73,7 +73,7 @@ export function Overview() {
             </div>
           </CardContent>
           <Separator />
-          <CardFooter className="flex justify-between py-5 text-sm">
+          <CardFooter className="flex justify-between py-5 text-sm bg-gray-800 text-white">
             <div>
               <p>Carbs</p>
               <p>0 / 240g</p>
