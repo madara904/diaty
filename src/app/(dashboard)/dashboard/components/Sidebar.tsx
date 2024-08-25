@@ -1,12 +1,13 @@
 "use client"
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Home, User, Settings, LogOut, Menu, X, BookCheck } from "lucide-react";
+import { Home, User, Settings, LogOut, Menu, X, BookCheck, Github } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 import { usePathname } from 'next/navigation'
 import { usePremium } from "@/context/Premium";
+import { Separator } from "@/components/ui/separator";
 
 
 interface SidebarItem {
@@ -70,7 +71,7 @@ const Sidebar: React.FC = () => {
                       ))}
                     </ul>
 
-            {   !isPremium &&
+            {   !isPremium ?
                     <Card className="absolute bottom-20 right-2 left-2">
                         <CardHeader className="p-4 md:p-5">
                             <CardTitle>Upgrade to Pro</CardTitle>
@@ -84,7 +85,20 @@ const Sidebar: React.FC = () => {
                             </Button>
                             </Link>
                         </CardContent>
-                    </Card>}
+                    </Card>
+                    :
+                    <div className="flex flex-col justify-center min-h-screen items-center gap-4 sm:mt-24">
+                            <Separator />
+                            <Link href="https://github.com/madara904" aria-label="GitHub">
+                                <Github
+                                    size={30}
+                                    stroke="white"
+                                    strokeWidth="1"
+                                    fill="white"
+                                    className="hover:opacity-80 cursor-pointer" />
+                            </Link>
+                        </div>
+                        }
                 </div>
             </aside>
 
