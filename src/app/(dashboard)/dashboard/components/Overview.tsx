@@ -67,6 +67,10 @@ export function Overview() {
               valueMax={calorieGoal}
               color={gaugeColor}
             />
+            <div className='flex text-center flex-col-reverse my-5'>
+              <p>Your daily goal</p>
+              <span>{calorieGoal}</span>
+            </div>
           </CardContent>
           <Separator />
           <CardFooter className="flex justify-between py-5 text-sm">

@@ -25,6 +25,7 @@ const SimpleGauge: React.FC<SimpleGaugeProps> = ({ value, valueMin, valueMax, co
         endAngle={360}
         innerRadius={80}
         outerRadius={95}
+        className='sm:w-[630px]'
 
         margin={{bottom: 0, left: 0, right: 0, top: 20}}
         sx={{
@@ -33,9 +34,8 @@ const SimpleGauge: React.FC<SimpleGaugeProps> = ({ value, valueMin, valueMax, co
             transition: 'linear 0.2s',
           },
           [`& .MuiGauge-valueText`]: {
-            fontSize: 25,
-            fontWeight: "medium",
-            transform: 'translate(0px, -1px)', 
+            fontSize: 23,
+            fontWeight: "medium", 
           },
         }}
         text={
