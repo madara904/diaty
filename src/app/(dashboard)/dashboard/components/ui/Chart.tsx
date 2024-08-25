@@ -53,7 +53,7 @@ const SimpleGauge: React.FC<SimpleGaugeProps> = ({ value, valueMin, valueMax, co
       <text x="50%" y="45%" textAnchor="middle" dy=".3em" fontSize="20px" fill="#333">
         {remainingCalories} / {valueMax}
       </text>
-      <text x="51%" y="62%" textAnchor="middle" dy=".3em" fontSize="20px" fill="#333" className=''>
+      <text x="51%" y="62%" textAnchor="middle" fontSize="14px" fill="#333" className=''>
         {value > valueMax ? "exceeding" : "remaining"}
       </text>
     </svg>
