@@ -34,7 +34,7 @@ const SimpleGauge: React.FC<SimpleGaugeProps> = ({ value, valueMin, valueMax, co
           },
           [`& .MuiGauge-valueText`]: {
             fontSize: 25,
-            fontWeight: "bold",
+            fontWeight: "medium",
             transform: 'translate(0px, -1px)', 
           },
         }}
