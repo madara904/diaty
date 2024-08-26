@@ -1,18 +1,19 @@
 "use client";
 import SimpleGauge from './ui/Chart';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { format, addDays, subDays } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 
-
+// Constants for goals
 const CALORIE_GOAL = 2000;
 const CARBS_TARGET = 240; 
 const PROTEINS_TARGET = 120;  
 const FATS_TARGET = 60; 
 
+// Mock data
 const mockData: Record<string, {
   caloriesConsumed: number;
   calorieGoal: number;
@@ -79,17 +80,19 @@ export function Overview() {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
   const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
 
-  const handlePrevDay = () => triggerDateChange(() => subDays(currentDate, 1));
-  const handleNextDay = () => triggerDateChange(() => addDays(currentDate, 1));
-
-  const triggerDateChange = (dateUpdater: () => Date) => {
+  // Handles date change with animation
+  const changeDate = useCallback((dateUpdater: () => Date) => {
     setIsTransitioning(true);
     setTimeout(() => {
       setCurrentDate(dateUpdater());
       setIsTransitioning(false);
     }, 200);
-  };
+  }, []);
 
+  const handlePrevDay = () => changeDate(() => subDays(currentDate, 1));
+  const handleNextDay = () => changeDate(() => addDays(currentDate, 1));
+
+  // Format current date and fetch data
   const formattedDate = format(currentDate, 'MMMM dd, yyyy');
   const dateKey = format(currentDate, 'yyyy-MM-dd');
 
@@ -103,6 +106,7 @@ export function Overview() {
     fatsConsumed: 0,
     fatsTarget: FATS_TARGET,
   };
+
   const {
     caloriesConsumed,
     calorieGoal,
@@ -114,6 +118,7 @@ export function Overview() {
     fatsTarget,
   } = data;
 
+  // Determine gauge color
   const gaugeColor = caloriesConsumed > calorieGoal ? 'coral' : 'LightSkyBlue';
 
   return (
@@ -148,18 +153,18 @@ export function Overview() {
             </div>
           </CardContent>
           <Separator />
-          <CardFooter className="flex justify-between py-5 text-sm ">
+          <CardFooter className="flex justify-between py-5 text-sm">
             <div>
               <p>Carbs</p>
-              <p>{carbsConsumed} / {carbsTarget}g</p>
+              <p><span className='font-bold'>{carbsConsumed}g</span> / {carbsTarget}g</p>
             </div>
             <div>
               <p>Proteins</p>
-              <p>{proteinsConsumed} / {proteinsTarget}g</p>
+              <p><span className='font-bold'>{proteinsConsumed}g</span> / {proteinsTarget}g</p>
             </div>
             <div>
               <p>Fats</p>
-              <p>{fatsConsumed} / {fatsTarget}g</p>
+              <p><span className='font-bold'>{fatsConsumed}g</span> / {fatsTarget}g</p>
             </div>
           </CardFooter>
         </Card>
