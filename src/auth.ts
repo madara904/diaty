@@ -1,33 +1,26 @@
-import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import prisma from "./lib/prisma";
-import type { Provider } from "next-auth/providers";
+import NextAuth from "next-auth"
+import Google from "next-auth/providers/google"
 import { PrismaAdapter } from "@auth/prisma-adapter"
-
+import prisma from "./lib/prisma"
+import type { Provider } from "next-auth/providers"
+ 
 
 const providers: Provider[] = [
-  GoogleProvider({
-    clientId: process.env.GOOGLE_CLIENT_ID as string,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-  })
-];
-
-
+  Google
+]
+ 
 export const providerMap = providers.map((provider) => {
   if (typeof provider === "function") {
-    const providerData = provider();
-    return { id: providerData.id, name: providerData.name };
+    const providerData = provider()
+    return { id: providerData.id, name: providerData.name }
   } else {
-
-    return { id: (provider as any).id, name: (provider as any).name };
+    return { id: provider.id, name: provider.name }
   }
-});
-
-
+})
+ 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers,
-  adapter: PrismaAdapter(prisma), 
   pages: {
     signIn: "/sign-in",
   },
-});
+})
