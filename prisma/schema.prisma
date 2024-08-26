@@ -10,18 +10,20 @@ datasource db {
 }
 
 model User {
-  id            String          @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String?
-  email         String          @unique
+  email         String         @unique
   emailVerified DateTime?
   image         String?
+  role          Role           @default(USER)
   accounts      Account[]
   sessions      Session[]
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  nutritionData NutritionData[]
+  plan          Plan?          @relation("UserPlan", fields: [planId], references: [id])
+  planId        String?        @unique
 
-  nutritionEntries NutritionEntry[]
-  diabetesInfo     DiabetesInfo?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   @@map("users")
 }
@@ -69,28 +71,39 @@ model VerificationToken {
   @@map("verification_tokens")
 }
 
-model NutritionEntry {
-  id             String   @id @default(cuid())
-  userId         String
-  date           DateTime
-  calories       Float
-  carbs          Float
-  proteins       Float
-  fat            Float
-  carbUnits      Float?
+model NutritionData {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime
+  calories    Float
+  carbs       Float
+  proteins    Float
+  fats        Float
+  carbUnits   Float?   
 
-  user           User     @relation(fields: [userId], references: [id])
-  @@unique([userId, date])
-  @@map("nutrition_entries")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("nutrition_data")
 }
 
-model DiabetesInfo {
-  id           String   @id @default(cuid())
-  userId       String   @unique
-  carbUnits    Float
-  date         DateTime @default(now())
-  user         User     @relation(fields: [userId], references: [id])
+model Plan {
+  id             String   @id @default(cuid())
+  name           String   // Name of the plan, e.g., "Weight Loss Plan"
+  dailyCalories  Float    // Daily target for calories
+  dailyCarbs     Float    // Daily target for carbohydrates
+  dailyProteins  Float    // Daily target for proteins
+  dailyFats      Float    // Daily target for fats
+  user           User?    @relation("UserPlan")
 
-  @@unique([userId, date])
-  @@map("diabetes_info")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("plans")
+}
+
+enum Role {
+  USER
+  ADMIN
 }
