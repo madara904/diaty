@@ -16,6 +16,11 @@ model User {
   emailVerified DateTime?
   image         String?
   role          Role           @default(USER)
+  weight        Float?         // Added weight
+  height        Float?         // Added height
+  age           Int?           // Added age
+  gender        String?        // Added gender
+  activityLevel String?        // Added activity level
   accounts      Account[]
   sessions      Session[]
   nutritionData NutritionData[]

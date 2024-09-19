@@ -1,7 +1,6 @@
 
 import SettingsPlan from "./settings"
 
-/* TODO: Zod form Switch*/
 
 const SettingsHome = () => {
   

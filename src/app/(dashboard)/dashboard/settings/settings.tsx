@@ -1,10 +1,10 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card"
+import { Badge } from "@/app/components/ui/badge"
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/app/components/ui/card"
 import { usePremium } from "@/context/Premium"
 import Dialog from "../components/ui/Dialog"
-import { Button, buttonVariants } from "@/components/ui/Button"
+import { Button, buttonVariants } from "@/app/components/ui/Button"
 
 
 const SettingsPlan = () => {

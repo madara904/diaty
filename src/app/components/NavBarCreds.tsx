@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { buttonVariants } from "../ui/Button";
-import { auth, signIn } from "@/auth";
+import { buttonVariants } from "@/app/components/ui/Button";
 import UserButton from "./UserButton";
 import { useSession } from "next-auth/react";
 

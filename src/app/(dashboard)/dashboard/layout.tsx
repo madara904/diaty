@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { SessionProvider } from "next-auth/react";
 import { cn } from "@/lib/utils";
-import NavBar from "@/components/(Navbar)/NavBar";
+import NavBar from "@/app/components/NavBar";
 import Sidebar from "./components/Sidebar";
 import "@/app/(index)/globals.css";
 import { PremiumProvider } from "@/context/Premium";

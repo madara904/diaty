@@ -1,7 +1,7 @@
 import { FcGoogle } from "react-icons/fc"
 import { signIn, auth, providerMap } from "@/auth"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/Button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card"
+import { Button } from "@/app/components/ui/Button"
 import { redirect } from "next/navigation"
 
 export default async function SignIn() {

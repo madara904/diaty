@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 import { Activity, Apple, DropletIcon } from "lucide-react";
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/Button";
-import { inter } from "@/components/(Navbar)/NavBar";
+import { buttonVariants } from "@/app/components/ui/Button";
+import { inter } from "@/app/components/NavBar";
 
 const perks = [
   {

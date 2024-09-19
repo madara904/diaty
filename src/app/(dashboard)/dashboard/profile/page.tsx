@@ -1,10 +1,23 @@
-const Profile = () => {
-  
-    return (
-      <>
-      <h1 className='mt-24 text-4xl font-medium'>Profile</h1>
-      </> 
-    )
+"use server"
+
+import { auth } from "@/auth"
+import ProfileSection from "./components/ProfileSection"
+import { redirect } from "next/navigation"
+
+export default async function Profile () {
+
+  const session = await auth()
+ 
+  if (!session || !session.user) {
+    redirect("/sign-in")
   }
-  
-  export default Profile
+
+  return (
+    <>
+    <div className='mt-24 font-medium'>
+      <h1 className='text-4xl'>Profile</h1>
+    </div>
+        <ProfileSection user={session.user}/>
+    </>
+  )
+}

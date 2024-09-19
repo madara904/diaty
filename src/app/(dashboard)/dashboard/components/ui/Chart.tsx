@@ -1,4 +1,4 @@
-import { inter } from '@/components/(Navbar)/NavBar';
+import { inter } from '@/app/components/NavBar';
 import { cn } from '@/lib/utils';
 import { Inter } from 'next/font/google';
 import React, { useEffect, useState } from 'react';

@@ -3,9 +3,9 @@ import SimpleGauge from './ui/Chart';
 import React, { useState, useCallback } from 'react';
 import { format, addDays, subDays } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/app/components/ui/card";
 import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '@/app/components/ui/separator';
 
 // Constants for goals
 const CALORIE_GOAL = 2000;

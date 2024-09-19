@@ -1,13 +1,13 @@
 "use client"
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/app/components/ui/card";
 import { Home, User, Settings, LogOut, Menu, X, BookCheck, Github } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/app/components/ui/Button";
 import Link from "next/link";
 import { usePathname } from 'next/navigation'
 import { usePremium } from "@/context/Premium";
-import { Separator } from "@/components/ui/separator";
+import { Separator } from "@/app/components/ui/separator";
 
 
 interface SidebarItem {
