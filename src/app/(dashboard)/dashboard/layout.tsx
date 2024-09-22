@@ -30,7 +30,7 @@ export default function RootLayout({
         <SessionProvider>
           <PremiumProvider>
             <NavBar />
-            <div className="flex flex-1">
+            <div className="flex flex-col lg:flex-row mt-4 gap-4 overflow-auto">
               <Sidebar />
               <main className="flex-1 container mx-auto max-w-7xl">{children}</main>
             </div>

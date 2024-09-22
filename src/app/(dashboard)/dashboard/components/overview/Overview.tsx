@@ -16,6 +16,7 @@ import DatePicker from './DatePicker';
 import IntakeForm from './IntakeForm';
 import Gauge from './Chart';
 import { Progress } from "@/app/components/ui/progress";
+import { Separator } from '@/app/components/ui/separator';
 
 const mockData = {
   "2024-09-20": { caloriesConsumed: 3200, carbsConsumed: 150, proteinsConsumed: 100, fatsConsumed: 70 },
@@ -138,9 +139,19 @@ export default function Overview({ user, plan }: OverviewProps) {
         </Card>
         <Card className="flex-1 shadow-md mb-5">
           <CardHeader>
-            <CardTitle>Nutrition Tracker</CardTitle>
+            <CardTitle className='py-2'>Nutrition Tracker</CardTitle>
+            <Separator />
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold">Recent Intakes</h3>
+              {recentIntakes.map((intake, index) => (
+                <div key={index} className="flex justify-between items-center text-sm">
+                  <span>{intake.date}</span>
+                  <span>{intake.calories} calories</span>
+                </div>
+              ))}
+            </div>
             <Dialog>
               <DialogTrigger asChild>
                 <Button className="w-full">
@@ -155,15 +166,6 @@ export default function Overview({ user, plan }: OverviewProps) {
                 <IntakeForm form={form} onSubmit={onSubmit} />
               </DialogContent>
             </Dialog>
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Recent Intakes</h3>
-              {recentIntakes.map((intake, index) => (
-                <div key={index} className="flex justify-between items-center text-sm">
-                  <span>{intake.date}</span>
-                  <span>{intake.calories} calories</span>
-                </div>
-              ))}
-            </div>
             <div className="space-y-2">
               <h3 className="text-lg font-semibold">Quick Actions</h3>
               <div className="grid grid-cols-2 gap-2">
