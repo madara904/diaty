@@ -24,7 +24,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   nutritionData NutritionData[]
-  plan          Plan?          @relation("UserPlan", fields: [planId], references: [id])
+  plan          Plan?          @relation("UserPlan", fields: [planId], references: [id]) // Fixed relation
   planId        String?        @unique
 
   createdAt     DateTime       @default(now())
@@ -100,12 +100,28 @@ model Plan {
   dailyCarbs     Float    // Daily target for carbohydrates
   dailyProteins  Float    // Daily target for proteins
   dailyFats      Float    // Daily target for fats
-  user           User?    @relation("UserPlan")
+  user           User?    @relation("UserPlan") // Added relation name here
+  userId         String?  @unique // Ensuring one-to-one relationship with unique userId
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
   @@map("plans")
+}
+
+model PlanTemplate {
+
+  id              String  @id @default(cuid())
+  name            String  @unique
+  dailyCalories   Float    // Daily target for calories
+  dailyCarbs      Float    // Daily target for carbohydrates
+  dailyProteins   Float    // Daily target for proteins
+  dailyFats       Float    // Daily target for fats
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("plan_templates")
 }
 
 enum Role {

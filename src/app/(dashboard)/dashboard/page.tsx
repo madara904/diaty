@@ -1,13 +1,16 @@
 import { signIn, auth, providerMap } from "@/auth"
-import Home from ".";
+import  fetchPlan  from "@/lib/fetch-user-plan";
 import { Overview } from "./components/Overview";
+
 
 
 const Dashboard = async () => {
   
-
   const session = await auth();
   const user =  session?.user;
+
+
+  const plan = await fetchPlan(user);
 
  /* if (!user) {
     redirect("/sign-in")
@@ -15,7 +18,7 @@ const Dashboard = async () => {
 */
   return (
     <>
-    <Overview />
+    <Overview user={user} plan={plan}/>
     </> 
   )
 }

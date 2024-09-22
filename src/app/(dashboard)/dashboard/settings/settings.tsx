@@ -1,61 +1,114 @@
-"use client"
+'use client';
 
-import { Badge } from "@/app/components/ui/badge"
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/app/components/ui/card"
-import { usePremium } from "@/context/Premium"
-import Dialog from "../components/ui/Dialog"
-import { Button, buttonVariants } from "@/app/components/ui/Button"
+import { useState } from "react";
+import { Button } from "@/app/components/ui/Button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import { PlanTemplate } from "@prisma/client";
+import { User } from "next-auth";
+import { useToast } from "@/app/components/hooks/use-toast";
 
+interface SettingsProps {
+  plan: PlanTemplate | null;
+  user: User | null;
+  availablePlans: PlanTemplate[];
+}
 
-const SettingsPlan = () => {
-    const { isPremium, setIsPremium} = usePremium();
+const Settings = ({ plan, user, availablePlans }: SettingsProps) => {
+  const [currentPlan, setCurrentPlan] = useState(plan?.name || ""); // Track plan name only
+  const [isLoading, setIsLoading] = useState(false); // Track loading state
+  const [isDialogOpen, setIsDialogOpen] = useState(false); // Track dialog state
+  const { toast } = useToast(); 
 
+  // Handle the form submission and plan change
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true); // Set loading state when submitting
 
-    const handleAction = (actionType: "confirm" | "cancel") => {
-      if (actionType === 'confirm') {
-        setIsPremium(!isPremium);
-      } else if (actionType === 'cancel') {
+    const formData = new FormData(e.currentTarget);
+    const selectedPlan = formData.get("plan");
+
+    try {
+      const response = await fetch("/api/change-plan", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json", // Correct content type
+        },
+        body: JSON.stringify({ plan: selectedPlan }), // Send JSON object
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setCurrentPlan(selectedPlan as string); // Update current plan state
+        setIsDialogOpen(false);
+
+       
+        toast({
+          title: "Success",
+          description: `You have successfully changed to the ${selectedPlan} plan.`,
+          variant: "default",
+        });
+      } else {
+
+        toast({
+          title: "Error",
+          description: data.error || "An error occurred while changing your plan.",
+          variant: "destructive",
+        });
       }
-    };
+    } catch (error) {
 
-    return (
-      <>
-        <Card className="sm:col-span-2 mt-4">
-          <CardHeader className="flex flex-row justify-between">
-          <div>
-            <CardTitle>Your Plan</CardTitle>
-              <CardDescription className="pt-2 pb-2">Change your Plan here</CardDescription>
-              <CardContent className="p-0 pb-2">
-            {isPremium ? 
-            <Badge 
-            variant={"badge_premium"} 
-            className="bg-violet-500">Premium</Badge> 
-            : 
-            <Badge 
-            variant={"destructive"} 
-            className="hover:bg-destructive/100">Free</Badge>
-            }
-            </CardContent>
-          </div>
-          <div className="pt-5">
-            <Dialog
-              trigger=
-              {<Button className="md:w-min" 
-              >Change</Button>}
-              title="Upgrade"
-              description="Are you sure you want to change your current Plan?"
-              cancel="No, Keep Current Plan"
-              action="Yes, Change Plan"
-              onConfirm={() => handleAction('confirm')}
-              onCancel={() => handleAction('cancel')}
-              cancelButtonClass={buttonVariants({ variant: "outline" })} 
-              actionButtonClass={buttonVariants({ variant: "destructive" })}
-            />
-          </div>
-          </CardHeader>
-        </Card>
-      </>
-    )
-  }
-  
-  export default SettingsPlan
+      toast({
+        title: "Error",
+        description: "An error occurred while changing your plan.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false); // Reset loading state after the request is done
+    }
+  };
+
+  return (
+    <div>
+      <h1>Current Plan: {currentPlan}</h1>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogTrigger asChild>
+          <Button onClick={() => setIsDialogOpen(true)}>Change my Plan</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Change Your Plan</DialogTitle>
+            <DialogDescription>
+              Select a plan and click "Save" to change your plan.
+              <form onSubmit={handleSubmit}>
+                <div className="flex flex-col gap-4 mt-4">
+                  <Select name="plan" defaultValue={currentPlan}>
+                    <SelectTrigger className="w-[180px]">
+                      <SelectValue placeholder="Select a plan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {availablePlans.map((plan) => (
+                          <SelectItem key={plan.id} value={plan.name}>
+                            {plan.name}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="submit" className="mt-4 w-full" disabled={isLoading}>
+                  {isLoading ? "Saving..." : "Save"}
+                </Button>
+              </form>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default Settings;

@@ -1,21 +1,25 @@
+"use client"
+
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { buttonVariants } from "@/app/components/ui/Button";
 import UserButton from "./UserButton";
-import { useSession } from "next-auth/react";
+import { User } from "next-auth";
+
+interface NavBarCredsProps {
+  user: User | null | undefined,
+  session: any
+}
 
 
+export default function NavBarCreds( {user, session} : NavBarCredsProps  ) {
 
-export default function NavBarCreds() {
-
-  const session = useSession();
-  const user = session.data?.user;
 
     return(
       <>
         <div className="m-3">
             {user && <UserButton user={user} />}
-            {!user && session.status !== "loading" && <SignInButton />}
+            {!user && session?.status !== "loading" && <SignInButton />}
         </div>
       </>
     );

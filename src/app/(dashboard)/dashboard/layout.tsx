@@ -6,6 +6,7 @@ import NavBar from "@/app/components/NavBar";
 import Sidebar from "./components/Sidebar";
 import "@/app/(index)/globals.css";
 import { PremiumProvider } from "@/context/Premium";
+import { Toaster } from "@/app/components/ui/toaster";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -34,6 +35,7 @@ export default function RootLayout({
               <Sidebar />
               <main className="flex-1 container mx-auto">{children}</main>
             </div>
+            <Toaster />
           </PremiumProvider>
         </SessionProvider>
       </body>

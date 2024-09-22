@@ -1,178 +1,121 @@
 "use client";
-import SimpleGauge from './ui/Chart';
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { format, addDays, subDays } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/app/components/ui/card";
-import { cn } from '@/lib/utils';
-import { Separator } from '@/app/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/app/components/ui/card";
+import { Button } from "@/app/components/ui/Button";
+import { Dialog, DialogHeader, DialogContent, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Session } from 'next-auth';
+import { Plan } from '@/types/plan';
+import DatePicker from './DatePicker';
+import IntakeForm from './IntakeForm';
+import Gauge from './Chart';
 
-// Constants for goals
-const CALORIE_GOAL = 2000;
-const CARBS_TARGET = 240; 
-const PROTEINS_TARGET = 120;  
-const FATS_TARGET = 60; 
-
-// Mock data
-const mockData: Record<string, {
-  caloriesConsumed: number;
-  calorieGoal: number;
-  carbsConsumed: number;
-  carbsTarget: number;
-  proteinsConsumed: number;
-  proteinsTarget: number;
-  fatsConsumed: number;
-  fatsTarget: number;
-}> = {
-  "2024-08-20": {
-    caloriesConsumed: 1800,
-    calorieGoal: CALORIE_GOAL,
-    carbsConsumed: 150,
-    carbsTarget: CARBS_TARGET,
-    proteinsConsumed: 100,
-    proteinsTarget: PROTEINS_TARGET,
-    fatsConsumed: 70,
-    fatsTarget: FATS_TARGET,
-  },
-  "2024-08-21": {
-    caloriesConsumed: 2100,
-    calorieGoal: CALORIE_GOAL,
-    carbsConsumed: 170,
-    carbsTarget: CARBS_TARGET,
-    proteinsConsumed: 110,
-    proteinsTarget: PROTEINS_TARGET,
-    fatsConsumed: 80,
-    fatsTarget: FATS_TARGET,
-  },
-  "2024-08-22": {
-    caloriesConsumed: 2050,
-    calorieGoal: CALORIE_GOAL,
-    carbsConsumed: 160,
-    carbsTarget: CARBS_TARGET,
-    proteinsConsumed: 105,
-    proteinsTarget: PROTEINS_TARGET,
-    fatsConsumed: 75,
-    fatsTarget: FATS_TARGET,
-  },
-  "2024-08-23": {
-    caloriesConsumed: 1750,
-    calorieGoal: CALORIE_GOAL,
-    carbsConsumed: 140,
-    carbsTarget: CARBS_TARGET,
-    proteinsConsumed: 95,
-    proteinsTarget: PROTEINS_TARGET,
-    fatsConsumed: 65,
-    fatsTarget: FATS_TARGET,
-  },
-  "2024-08-25": {
-    caloriesConsumed: 1750,
-    calorieGoal: CALORIE_GOAL,
-    carbsConsumed: 140,
-    carbsTarget: CARBS_TARGET,
-    proteinsConsumed: 95,
-    proteinsTarget: PROTEINS_TARGET,
-    fatsConsumed: 65,
-    fatsTarget: FATS_TARGET,
-  },
+const mockData = {
+  "2024-09-20": { caloriesConsumed: 3200, carbsConsumed: 150, proteinsConsumed: 100, fatsConsumed: 70 },
+  "2024-09-21": { caloriesConsumed: 2100, carbsConsumed: 170, proteinsConsumed: 110, fatsConsumed: 80 },
+  "2024-09-22": { caloriesConsumed: 2050, carbsConsumed: 160, proteinsConsumed: 105, fatsConsumed: 75 },
+  "2024-09-23": { caloriesConsumed: 1750, carbsConsumed: 140, proteinsConsumed: 95, fatsConsumed: 65 },
+  "2024-09-25": { caloriesConsumed: 1750, carbsConsumed: 140, proteinsConsumed: 95, fatsConsumed: 65 },
 };
 
-export function Overview() {
+interface OverviewProps {
+  user: Session['user'];
+  plan: Plan | undefined | null;
+}
+
+const formSchema = z.object({
+  Calories: z.coerce.number().positive(),
+  Carbs: z.coerce.number().positive(),
+  Fats: z.coerce.number().positive(),
+  Proteins: z.coerce.number().positive(),
+});
+
+export function Overview({ user, plan }: OverviewProps) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date());
-  const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
-  // Handles date change with animation
-  const changeDate = useCallback((dateUpdater: () => Date) => {
-    setIsTransitioning(true);
-    setTimeout(() => {
-      setCurrentDate(dateUpdater());
-      setIsTransitioning(false);
-    }, 200);
-  }, []);
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      Calories: 0,
+      Carbs: 0,
+      Fats: 0,
+      Proteins: 0,
+    },
+  });
 
-  const handlePrevDay = () => changeDate(() => subDays(currentDate, 1));
-  const handleNextDay = () => changeDate(() => addDays(currentDate, 1));
-
-  // Format current date and fetch data
-  const formattedDate = format(currentDate, 'MMMM dd, yyyy');
-  const dateKey = format(currentDate, 'yyyy-MM-dd');
-
-  const data = mockData[dateKey] || {
-    caloriesConsumed: 0,
-    calorieGoal: CALORIE_GOAL,
-    carbsConsumed: 0,
-    carbsTarget: CARBS_TARGET,
-    proteinsConsumed: 0,
-    proteinsTarget: PROTEINS_TARGET,
-    fatsConsumed: 0,
-    fatsTarget: FATS_TARGET,
+  const changeDate = (days: number) => {
+    setCurrentDate(prevDate => days > 0 ? addDays(prevDate, 1) : subDays(prevDate, 1));
   };
 
-  const {
-    caloriesConsumed,
-    calorieGoal,
-    carbsConsumed,
-    carbsTarget,
-    proteinsConsumed,
-    proteinsTarget,
-    fatsConsumed,
-    fatsTarget,
-  } = data;
+  const dateKey = format(currentDate, 'yyyy-MM-dd');
+  const data = mockData[dateKey as keyof typeof mockData] || { caloriesConsumed: 0, carbsConsumed: 0, proteinsConsumed: 0, fatsConsumed: 0 };
 
-  // Determine gauge color
-  const gaugeColor = caloriesConsumed > calorieGoal ? 'coral' : 'LightSkyBlue';
+  const gaugeColor = data.caloriesConsumed > (plan?.dailyCalories ?? 0) ? 'coral' : 'LightSkyBlue';
+  const percentage = Math.min((data.caloriesConsumed / (plan?.dailyCalories ?? 1)) * 100, 100);
+  const remainingCalories = (plan?.dailyCalories ?? 0) - data.caloriesConsumed;
+
+  const onSubmit = (values: z.infer<typeof formSchema>) => {
+    console.log(values);
+  };
 
   return (
     <>
       <h1 className='mt-24 text-4xl font-medium'>Overview</h1>
-      <div className={cn("md:flex mt-4 gap-4 transition-all duration-300", isTransitioning ? 'opacity-0' : 'opacity-100')}>
-        <Card className="flex-1 shadow-md md:w-1/2 mb-5 sm:m-0">
-          <div className="flex justify-end m-3">
-            <ChevronLeft
-              onClick={handlePrevDay}
-              className="cursor-pointer hover:opacity-50"
-              size={26}
-            />
-            <ChevronRight
-              onClick={handleNextDay}
-              className="cursor-pointer hover:opacity-50"
-              size={26}
-            />
-          </div>
-          <CardHeader className="items-center p-0">
-            <CardTitle>Your Intakes</CardTitle>
-            <CardDescription>{formattedDate}</CardDescription>
+      <div className="flex flex-col md:flex-row mt-4 gap-4">
+        <Card className="flex-1 shadow-md mb-5">
+          <CardHeader className="flex justify-between items-center">
+            <div>
+              <Button variant="outline" onClick={() => changeDate(-1)}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <DatePicker currentDate={currentDate} setCurrentDate={setCurrentDate} popoverOpen={popoverOpen} setPopoverOpen={setPopoverOpen} />
+              <Button variant="outline" onClick={() => changeDate(1)} className="flex-shrink-0">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <div className='flex justify-center py-12'>
-              <SimpleGauge
-                value={caloriesConsumed}
-                valueMin={0}
-                valueMax={calorieGoal}
-                color={gaugeColor}
-              />
+              <Gauge remainingCalories={remainingCalories} data={data} gaugeColor={gaugeColor} percentage={percentage} plan={plan} />
             </div>
           </CardContent>
-          <Separator />
           <CardFooter className="flex justify-between py-5 text-sm">
             <div>
               <p>Carbs</p>
-              <p><span className='font-bold'>{carbsConsumed}g</span> / {carbsTarget}g</p>
+              <p><span className='font-bold'>{data.carbsConsumed}g</span> / {plan?.dailyCarbs}g</p>
             </div>
             <div>
               <p>Proteins</p>
-              <p><span className='font-bold'>{proteinsConsumed}g</span> / {proteinsTarget}g</p>
+              <p><span className='font-bold'>{data.proteinsConsumed}g</span> / {plan?.dailyProteins}g</p>
             </div>
             <div>
               <p>Fats</p>
-              <p><span className='font-bold'>{fatsConsumed}g</span> / {fatsTarget}g</p>
+              <p><span className='font-bold'>{data.fatsConsumed}g</span> / {plan?.dailyFats}g</p>
             </div>
           </CardFooter>
         </Card>
-        <Card className="shadow-md md:w-1/2">
-          <CardHeader className="items-center">
-            <CardTitle></CardTitle>
-            <CardDescription>{formattedDate}</CardDescription>
+        <Card className="flex-1 shadow-md mb-5">
+          <CardHeader>
+            <CardTitle>Track Your Intakes</CardTitle>
           </CardHeader>
+          <CardContent>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>Add new Data</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add your intakes</DialogTitle>
+                </DialogHeader>
+                <IntakeForm form={form} onSubmit={onSubmit} />
+              </DialogContent>
+            </Dialog>
+          </CardContent>
         </Card>
       </div>
     </>

@@ -1,48 +1,25 @@
-"use client";
-
 import Link from "next/link";
-import { Ephesis, Inter } from "next/font/google";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
 import NavBarCreds from "./NavBarCreds";
+import { auth } from "@/auth";
 
-const ephesis = Ephesis({
-  weight: "400",
-  subsets: ["latin"],
-});
 
-export const inter = Inter({
-  weight: "200",
-  subsets: ["latin"],
-  style: "normal",
-});
-
-export default function NavBar() {
-  const [showBackground, setShowBackground] = useState(false);
-
-  const TOP_OFFSET = 5;
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowBackground(window.scrollY >= TOP_OFFSET);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+export default async function NavBar() {
+  const session = await auth();
+  const user = session?.user;
 
   return (
     <div
-      className={`fixed top-0 inset-x-0 w-full ${!showBackground ? "bg-white" : "backdrop-blur bg-white/90"} border-b border-zinc-300 z-[10] shadow-sm`}
+      className="fixed top-0 inset-x-0 w-full bg-white backdrop-blur bg-white/90 border-b border-zinc-300 z-[10] shadow-sm"
     >
       <div className="container h-[75px] mx-auto flex items-center justify-between gap-2">
         <Link
           href="/"
-          className={cn("text-4xl text-foreground hover:opacity-80 font-normal ml-4 mb-2 md:ml-0", inter.className)}
+          className={cn("text-4xl text-foreground hover:opacity-80 font-normal ml-4 mb-2 md:ml-0")}
         >
           diaty
         </Link>
-        <NavBarCreds />
+        <NavBarCreds user={user} session={session}/>
       </div>
     </div>
   );
