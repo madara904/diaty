@@ -23,7 +23,7 @@ export default function RootLayout({
       <body className={cn("flex flex-col min-h-screen", inter.className)}>
         <SessionProvider>
           <NavBar />
-          <main className="flex-1 container max-w-6xl mx-auto pt-24 antialiased light">
+          <main className="flex-1 container max-w-7xl mx-auto pt-24 antialiased light">
             {children}
           </main>
           <Footer />

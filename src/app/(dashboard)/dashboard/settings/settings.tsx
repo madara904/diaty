@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/app/components/ui/Button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
 import { PlanTemplate } from "@prisma/client";
 import { User } from "next-auth";
 import { useToast } from "@/app/components/hooks/use-toast";
@@ -43,14 +44,12 @@ const Settings = ({ plan, user, availablePlans }: SettingsProps) => {
         setCurrentPlan(selectedPlan as string); // Update current plan state
         setIsDialogOpen(false);
 
-       
         toast({
           title: "Success",
           description: `You have successfully changed to the ${selectedPlan} plan.`,
           variant: "default",
         });
       } else {
-
         toast({
           title: "Error",
           description: data.error || "An error occurred while changing your plan.",
@@ -58,7 +57,6 @@ const Settings = ({ plan, user, availablePlans }: SettingsProps) => {
         });
       }
     } catch (error) {
-
       toast({
         title: "Error",
         description: "An error occurred while changing your plan.",
@@ -70,44 +68,47 @@ const Settings = ({ plan, user, availablePlans }: SettingsProps) => {
   };
 
   return (
-    <div>
-      <h1>Current Plan: {currentPlan}</h1>
-
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogTrigger asChild>
-          <Button onClick={() => setIsDialogOpen(true)}>Change my Plan</Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Change Your Plan</DialogTitle>
-            <DialogDescription>
-              Select a plan and click "Save" to change your plan.
-              <form onSubmit={handleSubmit}>
-                <div className="flex flex-col gap-4 mt-4">
-                  <Select name="plan" defaultValue={currentPlan}>
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Select a plan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {availablePlans.map((plan) => (
-                          <SelectItem key={plan.id} value={plan.name}>
-                            {plan.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button type="submit" className="mt-4 w-full" disabled={isLoading}>
-                  {isLoading ? "Saving..." : "Save"}
-                </Button>
-              </form>
-            </DialogDescription>
-          </DialogHeader>
-        </DialogContent>
-      </Dialog>
-    </div>
+    <Card className="shadow-md mt-4">
+      <CardHeader>
+        <CardTitle className="text-lg font-semibold">Current Plan: <span className="text-purple-700">{currentPlan}</span></CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => setIsDialogOpen(true)} className="text-white bg-gradient-to-r from-purple-500 to-indigo-600 ring-1 ring-purple-900/5 shadow-lg space-y-3 hover:bg-gradient-to-r hover:from-pink-500 hover:to-purple-600 hover:ring-pink-500 transition-all duration-300">Change my Plan</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Change Your Plan</DialogTitle>
+              <DialogDescription>
+                Select a plan and click "Save" to change your plan.
+                <form onSubmit={handleSubmit}>
+                  <div className="flex flex-col gap-4 mt-4">
+                    <Select name="plan" defaultValue={currentPlan}>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select a plan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {availablePlans.map((plan) => (
+                            <SelectItem key={plan.id} value={plan.name}>
+                              {plan.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button type="submit" className="mt-4 w-full" disabled={isLoading}>
+                    {isLoading ? "Saving..." : "Save"}
+                  </Button>
+                </form>
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </Card>
   );
 };
 

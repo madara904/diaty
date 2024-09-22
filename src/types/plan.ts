@@ -6,4 +6,7 @@ export interface Plan {
     dailyProteins: number;
     dailyFats: number;
     createdAt?: Date;
+    carbPercentage?: number;
+    proteinPercentage?: number;
+    fatPercentage?: number;
   }

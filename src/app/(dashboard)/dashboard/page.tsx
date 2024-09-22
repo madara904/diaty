@@ -1,6 +1,6 @@
 import { signIn, auth, providerMap } from "@/auth"
 import  fetchPlan  from "@/lib/fetch-user-plan";
-import { Overview } from "./components/Overview";
+import  Overview  from "./components/overview/Overview";
 
 
 
