@@ -7,10 +7,10 @@ const Onboarding = async () => {
     const session = await auth();
     const user = session?.user;
 
-    if (!user) {
+    /*if (!user) {
         redirect("/sign-in");
     }
-
+    */
     const plans = await fetchAvailablePlans();
     const planNames = plans.map(plan => ({ id: plan.id, name: plan.name }));
 
