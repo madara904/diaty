@@ -15,7 +15,7 @@ const Dashboard = async () => {
 
   const profileCompleted = await checkFlag(user)
 
-  if (!profileCompleted) {
+  /*if (!profileCompleted) {
     redirect("/onboarding")
   }
 
