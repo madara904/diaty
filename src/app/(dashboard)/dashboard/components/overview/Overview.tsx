@@ -18,6 +18,8 @@ import Gauge from './Chart';
 import { Progress } from "@/app/components/ui/progress";
 import { Separator } from '@/app/components/ui/separator';
 
+
+
 const mockData = {
   "2024-09-20": { caloriesConsumed: 3200, carbsConsumed: 150, proteinsConsumed: 100, fatsConsumed: 70 },
   "2024-09-21": { caloriesConsumed: 2100, carbsConsumed: 170, proteinsConsumed: 110, fatsConsumed: 80 },
@@ -109,16 +111,23 @@ export default function Overview({ user, plan }: OverviewProps) {
                     plan={plan}
                   />
                 </div>
-                <div className="mt-4 text-center space-y-2">
-                  <p className="text-sm font-medium">
-                    You've consumed <span className="font-semibold">{data.caloriesConsumed}</span> calories out of your daily goal of <span className="font-semibold">{plan?.dailyCalories ?? 0}</span>.
-                  </p>
-                  <p className={`text-sm ${remainingCalories > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {remainingCalories > 0
-                      ? `You have ${remainingCalories} calories remaining for today.`
-                      : `You've exceeded your daily caloric intake by ${Math.abs(remainingCalories)} calories.`}
-                  </p>
-                </div>
+                <div className="space-y-2">
+              <h3 className="text-lg font-semibold">Quick Actions</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="outline" className="w-full">
+                  <History className="mr-2 h-4 w-4" />
+                  View History
+                </Button>
+                <Button variant="outline" className="w-full">
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Progress Report
+                </Button>
+                <Button variant="outline" className="w-full">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Adjust Plan
+                </Button>
+              </div>
+            </div>
               </TabsContent>
               <TabsContent value="macros">
                 <div className="space-y-4 py-4">
@@ -166,23 +175,6 @@ export default function Overview({ user, plan }: OverviewProps) {
                 <IntakeForm form={form} onSubmit={onSubmit} />
               </DialogContent>
             </Dialog>
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Quick Actions</h3>
-              <div className="grid grid-cols-2 gap-2">
-                <Button variant="outline" className="w-full">
-                  <History className="mr-2 h-4 w-4" />
-                  View History
-                </Button>
-                <Button variant="outline" className="w-full">
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  Progress Report
-                </Button>
-                <Button variant="outline" className="w-full">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Adjust Plan
-                </Button>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>

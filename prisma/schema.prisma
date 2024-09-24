@@ -21,6 +21,7 @@ model User {
   age           Int?           // Added age
   gender        String?        // Added gender
   activityLevel String?        // Added activity level
+  completeFlag  Boolean         @default(false) // New field to track profile completion
   accounts      Account[]
   sessions      Session[]
   nutritionData NutritionData[]

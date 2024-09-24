@@ -25,12 +25,12 @@ export default function UserButton({ user }: UserButtonProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="icon" className="flex-none rounded-full">
+        <Button size="icon" className="flex-none rounded-full bg-transparent hover:bg-gray-200">
           <Image
             src={user.image || avatarPlaceholder}
             alt="User profile picture"
-            width={50}
-            height={50}
+            width={45}
+            height={45}
             className="aspect-square rounded-full bg-background object-cover"
           />
         </Button>
