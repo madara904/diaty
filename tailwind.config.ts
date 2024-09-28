@@ -10,9 +10,6 @@ const config = {
 	],
   prefix: "",
   theme: {
-    backgroundImage: {
-      'back': "url('../assets/images/poly.png')",
-    },
     container: {
       center: true,
       padding: "2rem",

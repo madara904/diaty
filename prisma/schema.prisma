@@ -5,22 +5,31 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("POSTGRES_PRISMA_URL") // uses connection pooling
-  directUrl = env("POSTGRES_URL_NON_POOLING") // uses a direct connection
+  url       = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
-
 model User {
-  id            String    @id @default(cuid())
+  id            String         @id @default(cuid())
   name          String?
-  email         String    @unique
+  email         String         @unique
   emailVerified DateTime?
   image         String?
+  role          Role           @default(USER)
+  weight        Float?         // Added weight
+  height        Float?         // Added height
+  age           Int?           // Added age
+  gender        String?        // Added gender
+  activityLevel String?        // Added activity level
+  completeFlag  Boolean         @default(false) // New field to track profile completion
   accounts      Account[]
   sessions      Session[]
+  nutritionData NutritionData[]
+  plan          Plan?          @relation("UserPlan", fields: [planId], references: [id]) // Fixed relation
+  planId        String?        @unique
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   @@map("users")
 }
@@ -66,4 +75,57 @@ model VerificationToken {
 
   @@id([identifier, token])
   @@map("verification_tokens")
+}
+
+model NutritionData {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date        DateTime
+  calories    Float
+  carbs       Float
+  proteins    Float
+  fats        Float
+  carbUnits   Float?   
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("nutrition_data")
+}
+
+model Plan {
+  id             String   @id @default(cuid())
+  name           String   // Name of the plan, e.g., "Weight Loss Plan"
+  dailyCalories  Float    // Daily target for calories
+  dailyCarbs     Float    // Daily target for carbohydrates
+  dailyProteins  Float    // Daily target for proteins
+  dailyFats      Float    // Daily target for fats
+  user           User?    @relation("UserPlan") // Added relation name here
+  userId         String?  @unique // Ensuring one-to-one relationship with unique userId
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("plans")
+}
+
+model PlanTemplate {
+
+  id              String  @id @default(cuid())
+  name            String  @unique
+  dailyCalories   Float    // Daily target for calories
+  dailyCarbs      Float    // Daily target for carbohydrates
+  dailyProteins   Float    // Daily target for proteins
+  dailyFats       Float    // Daily target for fats
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("plan_templates")
+}
+
+enum Role {
+  USER
+  ADMIN
 }
