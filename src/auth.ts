@@ -21,8 +21,14 @@ export const providerMap = providers.map((provider) => {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [Google({
     clientId: process.env.AUTH_GOOGLE_ID,
-    clientSecret: process.env.AUTH_GOOGLE_SECRET
+    clientSecret: process.env.AUTH_GOOGLE_SECRET,
+    authorization: {
+      params: {
+        scope: "openid email profile",
+      },
+    },
   })],
+  adapter: PrismaAdapter(prisma),
   pages: {
     signIn: "/sign-in",
   },
