@@ -3,7 +3,7 @@ import Link from 'next/link'
 
 export default function NotFound() {
   return (
-    <div className=" flex items-center justify-center my-24">
+    <div className="flex items-center justify-center my-24">
       <div className="max-w-6xl w-full flex flex-col md:flex-row items-center justify-center gap-8 md:gap-16">
         <div className="w-full md:w-1/2 flex justify-center">
           <Image
@@ -21,7 +21,7 @@ export default function NotFound() {
           </p>
           <Link
             href="/"
-            className="bg-primary text-gray-800 hover:bg-primary/90 px-6 py-3 rounded-full text-lg font-semibold transition-colors duration-300 inline-block"
+            className="bg-primary text-gray-800 hover:bg-primary/90 px-6 py-3 text-lg font-semibold transition-colors duration-300 inline-block"
           >
             Return to Home
           </Link>

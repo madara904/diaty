@@ -3,12 +3,12 @@ import Google from "next-auth/providers/google"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import prisma from "./lib/prisma"
 import type { Provider } from "next-auth/providers"
- 
+
 
 const providers: Provider[] = [
   Google
 ]
- 
+
 export const providerMap = providers.map((provider) => {
   if (typeof provider === "function") {
     const providerData = provider()
@@ -17,9 +17,12 @@ export const providerMap = providers.map((provider) => {
     return { id: provider.id, name: provider.name }
   }
 })
- 
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers,
+  providers: [Google({
+    clientId: process.env.GOOGLE_ID,
+    clientSecret: process.env.GOOGLE_SECRET
+  })],
   pages: {
     signIn: "/sign-in",
   },
