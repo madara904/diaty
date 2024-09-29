@@ -22,20 +22,20 @@ const profileSchema = z.object({
   height: z.number().min(100, "Height must be at least 100 cm").max(250, "Height must be less than 250 cm").nullable(),
   age: z.number().min(18, "Age must be at least 18").max(120, "Age must be less than 120").nullable(),
   gender: z.enum(["male", "female", "other"]).nullable(),
-})
+});
 
-type ProfileFormData = z.infer<typeof profileSchema>
+type ProfileFormData = z.infer<typeof profileSchema>;
 
 interface ProfilePageProps {
   user: {
-    name: string | null
-    email: string | null
-    weight: number | null
-    height: number | null
-    age: number | null
-    gender: "male" | "female" | "other" | null
+    name: string | null;
+    email: string | null;
+    weight: number | null;
+    height: number | null;
+    age: number | null;
+    gender: "male" | "female" | "other" | null;
     image?: string | null;
-  } | null
+  } | null;
 }
 
 export default function ProfilePage({ user }: ProfilePageProps) {
@@ -47,75 +47,74 @@ export default function ProfilePage({ user }: ProfilePageProps) {
     register,
     control,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
     reset,
     watch,
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: user?.name ?? '',
-      email: user?.email ?? '',
+      name: user?.name ?? "",
+      email: user?.email ?? "",
       weight: user?.weight ?? null,
       height: user?.height ?? null,
       age: user?.age ?? null,
       gender: user?.gender ?? null,
     },
-  })
+  });
 
-  const weight = user?.weight ?? 0
-  const height = user?.height ?? 0
-
+  const weight = user?.weight ?? 0;
+  const height = user?.height ?? 0;
 
   const onSubmit = async (data: ProfileFormData) => {
     try {
-      const response = await fetch('/api/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      })
+      });
 
       if (response.ok) {
-        const updatedUser = await response.json()
+        const updatedUser = await response.json();
         toast({
           title: "Success",
           description: `You have successfully updated your profile`,
           variant: "default",
           duration: 2000,
-        })
-        setUserData(updatedUser)
-        reset(updatedUser)
+        });
+        setUserData(updatedUser);
+        reset(updatedUser);
 
-        router.refresh()
+        router.refresh();
       } else {
-        const errorData = await response.json()
+        const errorData = await response.json();
         toast({
           title: "Error",
           description: errorData || "An error occurred while updating your profile.",
-          variant: "destructive"
+          variant: "destructive",
         });
       }
     } catch (error) {
-      console.error("Error updating profile:", error)
+      console.error("Error updating profile:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
     }
-  }
+  };
 
   const calculateBMI = (weight: number | null, height: number | null) => {
     if (!weight || !height) return null;
     const heightInMeters = height / 100;
     return (weight / (heightInMeters * heightInMeters)).toFixed(1);
-  }
+  };
 
   const getBMICategory = (bmi: number) => {
     if (bmi < 18.5) return "Underweight";
     if (bmi < 25) return "Normal weight";
     if (bmi < 30) return "Overweight";
     return "Obese";
-  }
+  };
 
   const bmi = calculateBMI(weight, height);
   const bmiCategory = bmi ? getBMICategory(parseFloat(bmi)) : null;
@@ -125,104 +124,104 @@ export default function ProfilePage({ user }: ProfilePageProps) {
     if (bmi < 25) return "text-green-500";
     if (bmi < 30) return "text-yellow-500";
     return "text-red-500";
-  }
+  };
 
   return (
     <div className="min-h-screen mb-12 sm:mb-0">
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle>Personal Information</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex justify-center sm:justify-start my-6">
-          <Avatar className="h-24 w-24">
-            <AvatarFallback className="bg-gray-200">
-              <Image
-                src={user?.image || "/placeholder.svg"}
-                alt="User profile picture"
-                width={96}
-                height={96}
-                className="aspect-square rounded-full bg-background object-cover" />
-            </AvatarFallback>
-          </Avatar>
-        </div>
-        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid sm:grid-cols-2 w-full gap-4">
-            <div>
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" {...register("name")} />
-              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
-            </div>
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" {...register("email")} disabled />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
-            </div>
-            <div>
-              <Label htmlFor="weight">Weight (kg)</Label>
-              <Input id="weight" type="number" {...register("weight", { valueAsNumber: true })} />
-              {errors.weight && <p className="text-red-500 text-sm mt-1">{errors.weight.message}</p>}
-            </div>
-            <div>
-              <Label htmlFor="height">Height (cm)</Label>
-              <Input id="height" type="number" {...register("height", { valueAsNumber: true })} />
-              {errors.height && <p className="text-red-500 text-sm mt-1">{errors.height.message}</p>}
-            </div>
-            <div>
-              <Label htmlFor="age">Age</Label>
-              <Input id="age" type="number" {...register("age", { valueAsNumber: true })} />
-              {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age.message}</p>}
-            </div>
-            <div>
-              <Label htmlFor="gender">Gender</Label>
-              <Controller
-                name="gender"
-                control={control}
-                render={({ field }) => (
-                  <Select onValueChange={field.onChange} value={field.value ?? undefined}>
-                    <SelectTrigger id="gender">
-                      <SelectValue>{field.value ? field.value : 'Select gender'}</SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                )} />
-              {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender.message}</p>}
-            </div>
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>Personal Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-center sm:justify-start my-6">
+            <Avatar className="h-24 w-24">
+              <AvatarFallback className="bg-gray-200">
+                <Image
+                  src={user?.image || "/placeholder.svg"}
+                  alt="User profile picture"
+                  width={96}
+                  height={96}
+                  className="aspect-square rounded-full bg-background object-cover"
+                />
+              </AvatarFallback>
+            </Avatar>
           </div>
-          <Button type="submit" className="w-full sm:w-auto">Save Changes</Button>
-        </form>
-      </CardContent>
-    </Card>
-      <div>
-          <Card className="mt-4">
-            <CardHeader>
-              <CardTitle>Health Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <div className="flex">
-                  <span>BMI (Body Mass Index):</span>
-                  <span className={`font-bold ${getBMIColor(parseFloat(bmi!))}`}>{bmi}</span>
-                </div>
-                <div className="flex">
-                <Progress value={parseFloat(bmi!)} max={40} className="w-1/2" />
-                </div>
-                <div className="flex">
-                  <span>Category:</span>
-                  <span className={`font-bold ${getBMIColor(parseFloat(bmi!))}`}>{bmiCategory}</span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  BMI is a measure of body fat based on height and weight. It's used to screen for weight categories that may lead to health problems.
-                </p>
+          <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+            <div className="grid sm:grid-cols-2 w-full gap-4">
+              <div>
+                <Label htmlFor="name">Name</Label>
+                <Input id="name" {...register("name")} />
+                {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
               </div>
-            </CardContent>
-          </Card>
+              <div>
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" {...register("email")} disabled />
+                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
+              </div>
+              <div>
+                <Label htmlFor="weight">Weight (kg)</Label>
+                <Input id="weight" type="number" {...register("weight", { valueAsNumber: true })} />
+                {errors.weight && <p className="text-red-500 text-sm mt-1">{errors.weight.message}</p>}
+              </div>
+              <div>
+                <Label htmlFor="height">Height (cm)</Label>
+                <Input id="height" type="number" {...register("height", { valueAsNumber: true })} />
+                {errors.height && <p className="text-red-500 text-sm mt-1">{errors.height.message}</p>}
+              </div>
+              <div>
+                <Label htmlFor="age">Age</Label>
+                <Input id="age" type="number" {...register("age", { valueAsNumber: true })} />
+                {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age.message}</p>}
+              </div>
+              <div>
+                <Label htmlFor="gender">Gender</Label>
+                <Controller
+                  name="gender"
+                  control={control}
+                  render={({ field }) => (
+                    <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                      <SelectTrigger id="gender">
+                        <SelectValue>{field.value ? field.value : "Select gender"}</SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="male">Male</SelectItem>
+                        <SelectItem value="female">Female</SelectItem>
+                        <SelectItem value="other">Other</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender.message}</p>}
+              </div>
+            </div>
+            <Button type="submit" className="w-full sm:w-auto" disabled={!isDirty}>
+              Save Changes
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+      <div>
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>Health Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="flex">
+                <span>BMI (Body Mass Index):</span>
+                <span className={`font-bold ${getBMIColor(parseFloat(bmi!))}`}>{bmi}</span>
+              </div>
+              <div className="flex">
+                <span>Category:</span>
+                <span className="font-bold">{bmiCategory}</span>
+              </div>
+              {bmi && (
+                <Progress value={(parseFloat(bmi) / 30) * 100} className="w-full" />
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
-      </div>
-
-  )
+    </div>
+  );
 }
