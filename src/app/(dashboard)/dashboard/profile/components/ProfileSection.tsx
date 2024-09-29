@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/components/hooks/use-toast";
 import Image from "next/image";
+import { Progress } from "@/app/components/ui/progress";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -40,7 +41,7 @@ interface ProfilePageProps {
 export default function ProfilePage({ user }: ProfilePageProps) {
   const [userData, setUserData] = useState<ProfileFormData | null>(null);
   const router = useRouter();
-  const { toast } = useToast(); 
+  const { toast } = useToast();
 
   const {
     register,
@@ -48,6 +49,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -60,19 +62,9 @@ export default function ProfilePage({ user }: ProfilePageProps) {
     },
   })
 
-  useEffect(() => {
-    if (user) {
-      reset({
-        name: user.name ?? '',
-        email: user.email ?? '',
-        weight: user.weight,
-        height: user.height,
-        age: user.age,
-        gender: user.gender,
-      })
-      setUserData(user as ProfileFormData)
-    }
-  }, [user, reset])
+  const weight = user?.weight ?? 0
+  const height = user?.height ?? 0
+
 
   const onSubmit = async (data: ProfileFormData) => {
     try {
@@ -86,8 +78,9 @@ export default function ProfilePage({ user }: ProfilePageProps) {
         const updatedUser = await response.json()
         toast({
           title: "Success",
-          description: `You have successfully changed your profile`,
+          description: `You have successfully updated your profile`,
           variant: "default",
+          duration: 2000,
         })
         setUserData(updatedUser)
         reset(updatedUser)
@@ -97,33 +90,59 @@ export default function ProfilePage({ user }: ProfilePageProps) {
         const errorData = await response.json()
         toast({
           title: "Error",
-          description: errorData || "An error occurred while changing your profile.",
-          variant: "destructive",
+          description: errorData || "An error occurred while updating your profile.",
+          variant: "destructive"
         });
-     
       }
     } catch (error) {
       console.error("Error updating profile:", error)
-
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
     }
   }
 
+  const calculateBMI = (weight: number | null, height: number | null) => {
+    if (!weight || !height) return null;
+    const heightInMeters = height / 100;
+    return (weight / (heightInMeters * heightInMeters)).toFixed(1);
+  }
+
+  const getBMICategory = (bmi: number) => {
+    if (bmi < 18.5) return "Underweight";
+    if (bmi < 25) return "Normal weight";
+    if (bmi < 30) return "Overweight";
+    return "Obese";
+  }
+
+  const bmi = calculateBMI(weight, height);
+  const bmiCategory = bmi ? getBMICategory(parseFloat(bmi)) : null;
+
+  const getBMIColor = (bmi: number) => {
+    if (bmi < 18.5) return "text-blue-500";
+    if (bmi < 25) return "text-green-500";
+    if (bmi < 30) return "text-yellow-500";
+    return "text-red-500";
+  }
+
   return (
+    <div className="min-h-screen mb-12 sm:mb-0">
     <Card className="mt-4">
       <CardHeader>
         <CardTitle>Personal Information</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex justify-center sm:justify-start my-6">
-          <Avatar className="h-15 w-15">
+          <Avatar className="h-24 w-24">
             <AvatarFallback className="bg-gray-200">
-            <Image
-            src={user?.image || (userData?.name ? userData.name.split(" ").map((n) => n[0]).join("") : user?.image!)}
-            alt="User profile picture"
-            width={70}
-            height={70}
-            className="aspect-square rounded-full bg-background object-cover"
-          />
+              <Image
+                src={user?.image || "/placeholder.svg"}
+                alt="User profile picture"
+                width={96}
+                height={96}
+                className="aspect-square rounded-full bg-background object-cover" />
             </AvatarFallback>
           </Avatar>
         </div>
@@ -165,19 +184,45 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                       <SelectValue>{field.value ? field.value : 'Select gender'}</SelectValue>
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="male">male</SelectItem>
-                      <SelectItem value="female">female</SelectItem>
-                      <SelectItem value="other">other</SelectItem>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
                     </SelectContent>
                   </Select>
-                )}
-              />
+                )} />
               {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender.message}</p>}
             </div>
           </div>
-          <Button type="submit" className="w-full sm:w-min">Save Changes</Button>
+          <Button type="submit" className="w-full sm:w-auto">Save Changes</Button>
         </form>
       </CardContent>
     </Card>
+      <div>
+          <Card className="mt-4">
+            <CardHeader>
+              <CardTitle>Health Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex">
+                  <span>BMI (Body Mass Index):</span>
+                  <span className={`font-bold ${getBMIColor(parseFloat(bmi!))}`}>{bmi}</span>
+                </div>
+                <div className="flex">
+                <Progress value={parseFloat(bmi!)} max={40} className="w-1/2" />
+                </div>
+                <div className="flex">
+                  <span>Category:</span>
+                  <span className={`font-bold ${getBMIColor(parseFloat(bmi!))}`}>{bmiCategory}</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  BMI is a measure of body fat based on height and weight. It's used to screen for weight categories that may lead to health problems.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+      </div>
+      </div>
+
   )
 }
