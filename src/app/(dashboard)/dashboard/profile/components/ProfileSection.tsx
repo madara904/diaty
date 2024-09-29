@@ -18,9 +18,9 @@ import { Progress } from "@/app/components/ui/progress";
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
-  weight: z.number().min(20, "Weight must be at least 20 kg").max(300, "Weight must be less than 300 kg").nullable(),
-  height: z.number().min(100, "Height must be at least 100 cm").max(250, "Height must be less than 250 cm").nullable(),
-  age: z.number().min(18, "Age must be at least 18").max(120, "Age must be less than 120").nullable(),
+  weight: z.coerce.number().min(20, "Weight must be at least 20 kg").max(300, "Weight must be less than 300 kg").nullable(),
+  height: z.coerce.number().min(100, "Height must be at least 100 cm").max(250, "Height must be less than 250 cm").nullable(),
+  age: z.coerce.number().min(18, "Age must be at least 18").max(120, "Age must be less than 120").nullable(),
   gender: z.enum(["male", "female", "other"]).nullable(),
 });
 
