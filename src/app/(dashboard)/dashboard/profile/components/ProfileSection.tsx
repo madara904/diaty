@@ -1,169 +1,175 @@
-"use client"
+"use client";
 
-import { Button } from "@/app/components/ui/Button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
-import { Progress } from "@/app/components/ui/progress"
-import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar"
-import { BarChart, Activity, Target, TrendingUp } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useState, useEffect } from "react";
+import { z } from "zod";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Avatar, AvatarFallback } from "@/app/components/ui/avatar";
+import { Button } from "@/app/components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
+import { Input } from "@/app/components/ui/input";
+import { Label } from "@/app/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/app/components/hooks/use-toast";
 
-interface ProfileData {
-  name: string;
-  email: string;
-  weight: number;
-  height: number;
-  age: number;
-  gender: 'male' | 'female' | 'other';
-  plan: 'Fitness' | 'Weight Gainer' | 'Weight Loss';
+const profileSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  weight: z.number().min(20, "Weight must be at least 20 kg").max(300, "Weight must be less than 300 kg").nullable(),
+  height: z.number().min(100, "Height must be at least 100 cm").max(250, "Height must be less than 250 cm").nullable(),
+  age: z.number().min(18, "Age must be at least 18").max(120, "Age must be less than 120").nullable(),
+  gender: z.enum(["male", "female", "other"]).nullable(),
+})
+
+type ProfileFormData = z.infer<typeof profileSchema>
+
+interface ProfilePageProps {
+  user: {
+    name: string | null
+    email: string | null
+    weight: number | null
+    height: number | null
+    age: number | null
+    gender: "male" | "female" | "other" | null
+  } | null
 }
 
-export default function ProfilePage( { user }: { user: any }) {
-  const [profileData, setProfileData] = useState<ProfileData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+export default function ProfilePage({ user }: ProfilePageProps) {
+  const [userData, setUserData] = useState<ProfileFormData | null>(null);
+  const router = useRouter();
+  const { toast } = useToast(); 
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      name: user?.name ?? '',
+      email: user?.email ?? '',
+      weight: user?.weight ?? null,
+      height: user?.height ?? null,
+      age: user?.age ?? null,
+      gender: user?.gender ?? null,
+    },
+  })
 
   useEffect(() => {
-    async function fetchProfileData() {
-      try {
-        if (!user.session || !user || !user.session.id) {
-          throw new Error('User not authenticated');
-        }
-
-        const userId = user.id;
-        const response = await fetch(`/api/profile?=${userId}`);
-        if (!response.ok) throw new Error('Failed to fetch profile data');
-        const data: ProfileData = await response.json();
-        setProfileData(data);
-      } catch (error) {
-        if (error instanceof Error) {
-          setError(error.message);
-        } else {
-          setError('An unknown error occurred');
-        }
-      } finally {
-        setLoading(false);
-      }
+    if (user) {
+      reset({
+        name: user.name ?? '',
+        email: user.email ?? '',
+        weight: user.weight,
+        height: user.height,
+        age: user.age,
+        gender: user.gender,
+      })
+      setUserData(user as ProfileFormData)
     }
+  }, [user, reset])
 
-    fetchProfileData();
-  }, []);
+  const onSubmit = async (data: ProfileFormData) => {
+    try {
+      const response = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      })
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error}</div>;
+      if (response.ok) {
+        const updatedUser = await response.json()
+        toast({
+          title: "Success",
+          description: `You have successfully changed your profile`,
+          variant: "default",
+        })
+        setUserData(updatedUser)
+        reset(updatedUser)
 
-  if (!profileData) return null;
+        router.refresh()
+      } else {
+        const errorData = await response.json()
+        toast({
+          title: "Error",
+          description: errorData || "An error occurred while changing your profile.",
+          variant: "destructive",
+        });
+     
+      }
+    } catch (error) {
+      console.error("Error updating profile:", error)
 
-  const { name, email, weight, height, age, gender, plan } = profileData;
+    }
+  }
 
-  const getBMI = (weight: number, height: number) => {
-    const heightInMeters = height / 100;
-    return (weight / (heightInMeters * heightInMeters)).toFixed(1);
-  };
-
-  const bmi = getBMI(weight, height);
   return (
-
-        <div className="bg-white border shadow-xl rounded-lg overflow-hidden mt-4">
-          <div className="px-4 py-5 sm:p-6">
-            <div className="sm:flex sm:items-center sm:justify-between">
-              <div className="sm:flex sm:space-x-5">
-                <div className="flex-shrink-0">
-                  <Avatar className="mx-auto h-20 w-20">
-                    <AvatarImage src="/placeholder.svg" alt={name} />
-                    <AvatarFallback>{name.charAt(0)}</AvatarFallback>
-                  </Avatar>
-                </div>
-                <div className="mt-4 text-center sm:mt-0 sm:pt-1 sm:text-left">
-                  <p className="text-xl font-bold text-gray-900 sm:text-2xl">{name}</p>
-                  <p className="text-sm font-medium text-gray-600">{email}</p>
-                  <p className="text-sm font-medium text-[#00FFA3]">{plan} Plan</p>
-                </div>
-              </div>
-              <div className="mt-5 flex justify-center sm:mt-0">
-                <Button className="bg-[#00FFA3] hover:bg-[#00CC82]">Edit Profile</Button>
-              </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Personal Information</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex justify-center sm:justify-start my-8">
+          <Avatar className="h-20 w-20">
+            <AvatarFallback className="bg-gray-200">
+              {userData?.name?.split(" ").map((n) => n[0]).join("") ?? ""}
+            </AvatarFallback>
+          </Avatar>
+        </div>
+        <form className="space-y-4" onSubmit={handleSubmit(onSubmit)}>
+          <div className="grid sm:grid-cols-2 w-full gap-4">
+            <div>
+              <Label htmlFor="name">Name</Label>
+              <Input id="name" {...register("name")} />
+              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
             </div>
-            
-            <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">BMI</CardTitle>
-                  <BarChart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{bmi}</div>
-                  <Progress 
-                    value={Number(bmi) / 0.4} 
-                    className="mt-2"
-                  />
-                  <p className="text-xs text-muted-foreground mt-2">
-                    {Number(bmi) < 18.5 ? 'Underweight' :
-                     Number(bmi) < 25 ? 'Normal weight' :
-                     Number(bmi) < 30 ? 'Overweight' : 'Obese'}
-                  </p>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Weight</CardTitle>
-                  <Activity className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{weight} kg</div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Height</CardTitle>
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{height} cm</div>
-                </CardContent>
-              </Card>
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" {...register("email")} disabled />
+              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>}
             </div>
-
-            <div className="mt-8 bg-gray-50 shadow sm:rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                <h3 className="text-lg leading-6 font-medium text-gray-900">Personal Information</h3>
-                <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-3">
-                  <div className="sm:col-span-1">
-                    <dt className="text-sm font-medium text-gray-500">Age</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{age} years</dd>
-                  </div>
-                  <div className="sm:col-span-1">
-                    <dt className="text-sm font-medium text-gray-500">Gender</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{gender}</dd>
-                  </div>
-                  <div className="sm:col-span-1">
-                    <dt className="text-sm font-medium text-gray-500">Plan</dt>
-                    <dd className="mt-1 text-sm text-gray-900">{plan}</dd>
-                  </div>
-                </div>
-              </div>
+            <div>
+              <Label htmlFor="weight">Weight (kg)</Label>
+              <Input id="weight" type="number" {...register("weight", { valueAsNumber: true })} />
+              {errors.weight && <p className="text-red-500 text-sm mt-1">{errors.weight.message}</p>}
             </div>
-
-            <div className="mt-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Your Goals</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center space-x-4">
-                    <Target className="h-10 w-10 text-[#00FFA3]" />
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Current Goal</p>
-                      <p className="text-lg font-semibold text-gray-900">{plan}</p>
-                    </div>
-                  </div>
-                  <p className="mt-4 text-sm text-gray-600">
-                    Based on your selected plan, we've customized your experience to help you achieve your goals. 
-                    Keep tracking your progress and stay motivated!
-                  </p>
-                </CardContent>
-              </Card>
+            <div>
+              <Label htmlFor="height">Height (cm)</Label>
+              <Input id="height" type="number" {...register("height", { valueAsNumber: true })} />
+              {errors.height && <p className="text-red-500 text-sm mt-1">{errors.height.message}</p>}
+            </div>
+            <div>
+              <Label htmlFor="age">Age</Label>
+              <Input id="age" type="number" {...register("age", { valueAsNumber: true })} />
+              {errors.age && <p className="text-red-500 text-sm mt-1">{errors.age.message}</p>}
+            </div>
+            <div>
+              <Label htmlFor="gender">Gender</Label>
+              <Controller
+                name="gender"
+                control={control}
+                render={({ field }) => (
+                  <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                    <SelectTrigger id="gender">
+                      <SelectValue>{field.value ? field.value : 'Select gender'}</SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">male</SelectItem>
+                      <SelectItem value="female">female</SelectItem>
+                      <SelectItem value="other">other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              />
+              {errors.gender && <p className="text-red-500 text-sm mt-1">{errors.gender.message}</p>}
             </div>
           </div>
-        </div>
+          <Button type="submit" className="w-full sm:w-min">Save Changes</Button>
+        </form>
+      </CardContent>
+    </Card>
   )
 }
