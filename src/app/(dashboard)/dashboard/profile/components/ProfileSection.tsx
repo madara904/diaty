@@ -114,14 +114,14 @@ export default function ProfilePage({ user }: ProfilePageProps) {
         <CardTitle>Personal Information</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="flex justify-center sm:justify-start my-8">
-          <Avatar className="h-20 w-20">
+        <div className="flex justify-center sm:justify-start my-6">
+          <Avatar className="h-15 w-15">
             <AvatarFallback className="bg-gray-200">
             <Image
             src={user?.image || (userData?.name ? userData.name.split(" ").map((n) => n[0]).join("") : user?.image!)}
             alt="User profile picture"
-            width={78}
-            height={78}
+            width={70}
+            height={70}
             className="aspect-square rounded-full bg-background object-cover"
           />
             </AvatarFallback>

@@ -46,7 +46,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
 
   const sidebarItems: SidebarItem[] = [
     { id: "overview", label: "Overview", link: "/dashboard", icon: <Home className="w-6 h-6" /> },
-    { id: "diaty", label: "Diaty", link: "", icon: <BookCheck className="w-6 h-6" /> },
+    { id: "diaty", label: "Diaty", link: "/dashboard/diaty", icon: <BookCheck className="w-6 h-6" /> },
     { id: "profile", label: "Profile", link: "/dashboard/profile", icon: <User className="w-6 h-6" /> },
     { id: "settings", label: "Settings", link: "/dashboard/settings", icon: <Settings className="w-6 h-6" /> },
   ]
