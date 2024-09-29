@@ -1,39 +1,54 @@
-// src/app/api/profile/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma'; // Prisma client
+import { auth } from '@/auth';
 
-const prisma = new PrismaClient();
+export async function GET() {
+  // Retrieve the current session
+  const session = await auth();
 
-export async function GET(req: NextRequest) {
+  if (!session || !session.user?.email) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Fetch user data from the database
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: {
+      name: true,
+      email: true,
+      weight: true,
+      height: true,
+      age: true,
+      gender: true,
+    },
+  });
+
+  if (!user) {
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({ user });
+}
+
+export async function PATCH(request: NextRequest) {
+  const session = await auth(); // Use your authentication method here
+  const userId = session?.user?.id; // Get user ID from the session
+
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const data = await request.json();
+  const { name, email, weight, height, age, gender } = data;
+
   try {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
-
-    if (!userId) {
-      return NextResponse.json({ message: 'User ID is required' }, { status: 400 });
-    }
-
-    const user = await prisma.user.findUnique({
+    const updatedUser = await prisma.user.update({
       where: { id: userId },
-      include: { plan: true },
+      data: { name, email, weight: parseFloat(weight), height: parseFloat(height), age: parseInt(age), gender },
     });
-
-    if (!user) {
-      return NextResponse.json({ message: 'User not found' }, { status: 404 });
-    }
-
-    const profileData = {
-      name: user.name,
-      email: user.email,
-      weight: user.weight,
-      height: user.height,
-      age: user.age,
-      gender: user.gender,
-      plan: user.plan?.name || 'No Plan',
-    };
-
-    return NextResponse.json(profileData, { status: 200 });
+    return NextResponse.json(updatedUser);
   } catch (error) {
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    console.error("Error updating user:", error);
+    return NextResponse.json({ error: error || "Error updating user" }, { status: 500 });
   }
 }

@@ -54,7 +54,7 @@ export default function Home() {
                       href="/dashboard"
                       className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full")}
                     >
-                      Browse Foods
+                      Browse Diaty
                     </Link>
                   </div>
                 </div>
