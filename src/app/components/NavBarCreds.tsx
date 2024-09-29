@@ -20,10 +20,10 @@ export default function NavBarCreds( {user, session} : NavBarCredsProps  ) {
 
     return(
       <>
-            <div className={cn("flex container h-[70px] items-center justify-between", !isCollapsed ? "max-w-7xl" : "max-w-8xl")}>
+            <div className={cn("flex container h-[65px] items-center justify-between", !isCollapsed ? "max-w-7xl" : "max-w-8xl")}>
         <Link
           href="/"
-          className={cn("text-4xl text-foreground hover:opacity-80 font-normal ml-4 mb-2 md:ml-0")}
+          className={cn("text-3xl sm:text-4xl text-foreground hover:opacity-80 font-normal ml-4 mb-2 md:ml-0")}
         >
           diaty
         </Link>

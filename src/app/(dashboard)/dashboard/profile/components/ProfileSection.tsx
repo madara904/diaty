@@ -127,14 +127,14 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   };
 
   return (
-    <div className="min-h-screen mb-12 sm:mb-0">
+    <div className="flex flex-col-reverse sm:block min-h-screen mb-12 sm:mb-0">
       <Card className="mt-4">
         <CardHeader>
           <CardTitle>Personal Information</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-center sm:justify-start my-6">
-            <Avatar className="h-24 w-24">
+            <Avatar className="h-24 w-24 sm:ml-10">
               <AvatarFallback className="bg-gray-200">
                 <Image
                   src={user?.image || "/placeholder.svg"}
@@ -216,7 +216,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
                 <span className="font-bold">{bmiCategory}</span>
               </div>
               {bmi && (
-                <Progress value={(parseFloat(bmi) / 30) * 100} className="w-full" />
+                <Progress value={(parseFloat(bmi) / 30) * 100} className="w-full"/>
               )}
             </div>
           </CardContent>

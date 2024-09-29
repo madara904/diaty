@@ -29,13 +29,13 @@ export default function UserButton({ user }: UserButtonProps) {
           <Image
             src={user.image || avatarPlaceholder}
             alt="User profile picture"
-            width={45}
-            height={45}
+            width={35}
+            height={35}
             className="aspect-square rounded-full bg-background object-cover"
           />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56">
+      <DropdownMenuContent className="w-48">
         <DropdownMenuLabel>{user.name || "User"}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
