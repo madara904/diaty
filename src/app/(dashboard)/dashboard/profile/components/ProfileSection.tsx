@@ -12,6 +12,7 @@ import { Label } from "@/app/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/app/components/hooks/use-toast";
+import Image from "next/image";
 
 const profileSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -32,6 +33,7 @@ interface ProfilePageProps {
     height: number | null
     age: number | null
     gender: "male" | "female" | "other" | null
+    image?: string | null;
   } | null
 }
 
@@ -107,7 +109,7 @@ export default function ProfilePage({ user }: ProfilePageProps) {
   }
 
   return (
-    <Card>
+    <Card className="mt-4">
       <CardHeader>
         <CardTitle>Personal Information</CardTitle>
       </CardHeader>
@@ -115,7 +117,13 @@ export default function ProfilePage({ user }: ProfilePageProps) {
         <div className="flex justify-center sm:justify-start my-8">
           <Avatar className="h-20 w-20">
             <AvatarFallback className="bg-gray-200">
-              {userData?.name?.split(" ").map((n) => n[0]).join("") ?? ""}
+            <Image
+            src={user?.image || (userData?.name ? userData.name.split(" ").map((n) => n[0]).join("") : user?.image!)}
+            alt="User profile picture"
+            width={78}
+            height={78}
+            className="aspect-square rounded-full bg-background object-cover"
+          />
             </AvatarFallback>
           </Avatar>
         </div>

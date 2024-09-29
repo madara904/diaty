@@ -1,9 +1,10 @@
 import { auth } from '@/auth';
 import prisma from './prisma'; // Prisma client
-import { revalidatePath } from 'next/cache';
 
 export async function getUserData() {
   const session = await auth();
+
+  const image = session?.user?.image
 
   if (!session || !session.user?.email) {
     throw new Error('Unauthorized');
@@ -26,6 +27,7 @@ export async function getUserData() {
   }
   return {
     ...user,
+    image,
     gender: user.gender as "male" | "female" | "other" | null,
   }
 }
