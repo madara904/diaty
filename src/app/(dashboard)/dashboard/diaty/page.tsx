@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import ProductModal from "./products/[name]/page";
+import ProductModal from "./products/components/ProductModal";
 import { Input } from "@/app/components/ui/input";
 import { Button } from "@/app/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card";
