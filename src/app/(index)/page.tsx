@@ -30,7 +30,7 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       <div className="flex-grow">
         <section className="relative">
-          <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+          <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
             <div className="lg:grid lg:grid-cols-2 lg:gap-28 items-center">
               <div className="sm:text-center lg:text-left">
                 <h1 className="text-7xl tracking-tight font-extrabold text-gray-900 sm:text-6xl md:text-7xl">
