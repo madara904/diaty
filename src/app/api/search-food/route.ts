@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 
-// Simple in-memory cache
 const cache: { [key: string]: { data: any; timestamp: number } } = {};
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes in milliseconds
+const CACHE_TTL = 5 * 60 * 1000;
 
 function getCacheKey(productName: string, page: number): string {
   return `${productName}-${page}`;
@@ -21,6 +21,12 @@ function setCache(key: string, data: any): void {
 }
 
 export async function GET(req: Request) {
+  const session = await auth();
+
+  if (!session) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   const { searchParams } = new URL(req.url);
   const productName = searchParams.get("productName");
   const page = parseInt(searchParams.get("page") || "1", 10);
@@ -46,7 +52,6 @@ export async function GET(req: Request) {
     }
 
     const data = await response.json();
-
     const validProducts = data.products?.filter((product: any) => {
       return product.product_name && product.image_url && !product.error;
     }) || [];

@@ -4,13 +4,17 @@ import { auth } from "@/auth";
 import fetchPlan from "@/lib/fetch-user-plan";
 import Settings from "./settings";
 import fetchAvailablePlans from "@/lib/available-plans";
+import { redirect } from "next/navigation";
 
 const SettingsHome = async () => {
-  // Fetch session user
+
   const session = await auth();
   const user = session?.user || null;
 
-  // Fetch current user plan and available plans
+  if (!user || !session){
+    redirect("/sign-in")
+}
+
   const plan = await fetchPlan(user) || null;
   const availablePlans = await fetchAvailablePlans();
 

@@ -10,7 +10,10 @@ const Dashboard = async () => {
   const session = await auth();
   const user = session?.user;
 
-
+  if (!user || !session){
+        redirect("/sign-in")
+  }
+  
   const plan = await fetchPlan(user);
 
   const profileCompleted = await checkFlag(user)
