@@ -225,7 +225,7 @@ interface CalorieGaugeProps {
 function CalorieGauge({ consumed, target, gaugeColor, remainingCalories }: CalorieGaugeProps) {
   const percentage = Math.min((consumed / target) * 100, 100)
   return (
-    <div className="relative w-52 h-52">
+    <div className="relative w-40 h-40 sm:w-52 sm:h-52 md:w-64 md:h-54 lg:w-54">
       <svg className="w-full h-full" viewBox="0 0 100 100">
         <circle
           cx="50"
@@ -250,8 +250,8 @@ function CalorieGauge({ consumed, target, gaugeColor, remainingCalories }: Calor
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <div className="text-2xl sm:text-3xl font-bold">{Math.abs(remainingCalories)}</div>
-        <div className="text-sm text-gray-500">
+        <div className="text-2xl sm:text-3xl md:text-4xl font-bold">{Math.abs(remainingCalories)}</div>
+        <div className="text-sm sm:text-base text-gray-500">
           {remainingCalories >= 0 ? 'remaining' : 'over'}
         </div>
       </div>
