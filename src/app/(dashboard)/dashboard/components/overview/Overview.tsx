@@ -233,7 +233,7 @@ function CalorieGauge({ consumed, target, gaugeColor, remainingCalories }: Calor
           r="45"
           fill="none"
           stroke="#e2e8f0"
-          strokeWidth="10"
+          strokeWidth="6"
         />
         <circle
           cx="50"
@@ -241,7 +241,7 @@ function CalorieGauge({ consumed, target, gaugeColor, remainingCalories }: Calor
           r="45"
           fill="none"
           stroke="currentColor"
-          strokeWidth="10"
+          strokeWidth="5"
           strokeDasharray="282.7"
           strokeDashoffset={282.7 - (282.7 * percentage) / 100}
           strokeLinecap="round"
