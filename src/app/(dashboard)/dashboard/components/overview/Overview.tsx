@@ -103,9 +103,9 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
             <CardTitle>Calorie Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center justify-center space-x-4">
+            <div className="flex items-center justify-center space-x-6">
               <div className="text-center">
-                <div className="text-2xl font-bold">{plan?.dailyCalories ?? 0}</div>
+                <div className="sm:text-2xl font-bold">{plan?.dailyCalories ?? 0}</div>
                 <div className="text-sm text-gray-500">Target</div>
               </div>
               <CalorieGauge
@@ -115,7 +115,7 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
                 remainingCalories={remainingCalories}
               />
               <div className="text-center">
-                <div className="text-2xl font-bold">{data.caloriesConsumed}</div>
+                <div className="sm:text-2xl font-bold">{data.caloriesConsumed}</div>
                 <div className="text-sm text-gray-500">Consumed</div>
               </div>
             </div>
@@ -225,7 +225,7 @@ interface CalorieGaugeProps {
 function CalorieGauge({ consumed, target, gaugeColor, remainingCalories }: CalorieGaugeProps) {
   const percentage = Math.min((consumed / target) * 100, 100)
   return (
-    <div className="relative w-48 h-48">
+    <div className="relative w-52 h-52">
       <svg className="w-full h-full" viewBox="0 0 100 100">
         <circle
           cx="50"
@@ -250,7 +250,7 @@ function CalorieGauge({ consumed, target, gaugeColor, remainingCalories }: Calor
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-        <div className="text-3xl font-bold">{Math.abs(remainingCalories)}</div>
+        <div className="text-2xl sm:text-3xl font-bold">{Math.abs(remainingCalories)}</div>
         <div className="text-sm text-gray-500">
           {remainingCalories >= 0 ? 'remaining' : 'over'}
         </div>
