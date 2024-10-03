@@ -3,6 +3,7 @@
 import { cn } from "@/lib/utils";
 import Sidebar from "./Sidebar";
 import { useSideBarContext } from "@/lib/context/SideBarContext";
+import React from "react";
 
 export default function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const { isCollapsed, setIsCollapsed } = useSideBarContext(); 
