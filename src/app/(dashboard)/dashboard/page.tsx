@@ -1,4 +1,4 @@
-import { signIn, auth, providerMap } from "@/auth"
+import { auth } from "@/auth"
 import fetchPlan from "@/lib/fetch-user-plan";
 import Overview from "./components/overview/Overview";
 import checkFlag from "@/lib/check-completion-flag";
@@ -17,10 +17,6 @@ const Dashboard = async () => {
 
   if (!profileCompleted) {
     redirect("/onboarding")
-  }
-
-  if (!user) {
-    redirect("/sign-in")
   }
 
   return (

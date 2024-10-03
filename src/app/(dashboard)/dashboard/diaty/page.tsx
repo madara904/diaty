@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/app/components/ui/skeleton"
 import React from "react"
 import { ScrollArea, ScrollBar } from "@/app/components/ui/scroll-area"
+import Image from "next/image"
 
 const SearchPage = () => {
   const [searchTerm, setSearchTerm] = useState("")
@@ -78,16 +79,65 @@ const SearchPage = () => {
   }, [products, sortOption, activeFilters])
 
   const handlePageChange = (newPage: number) => {
+    setIsLoading(true)
     setCurrentPage(newPage)
     fetchProducts(newPage)
   }
 
   const toggleFilter = (filterId: string) => {
-    setActiveFilters(prev => 
-      prev.includes(filterId) 
+    setActiveFilters(prev =>
+      prev.includes(filterId)
         ? prev.filter(f => f !== filterId)
         : [...prev, filterId]
     )
+  }
+
+  const renderSkeletonLoader = () => {
+    if (viewMode === "tile") {
+      return (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+        >
+          {[...Array(8)].map((_, index) => (
+            <Card key={index} className="overflow-hidden">
+              <CardHeader className="p-0">
+                <Skeleton className="h-48 w-full" />
+              </CardHeader>
+              <CardContent className="p-4">
+                <Skeleton className="h-4 w-3/4 mb-2" />
+                <Skeleton className="h-4 w-1/2" />
+              </CardContent>
+            </Card>
+          ))}
+        </motion.div>
+      )
+    } else {
+      return (
+        <Table className="mt-6">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Image</TableHead>
+              <TableHead>Product Name</TableHead>
+              <TableHead>Brand</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[...Array(8)].map((_, index) => (
+              <TableRow key={index}>
+                <TableCell><Skeleton className="h-16 w-16" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-3/4" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-1/2" /></TableCell>
+                <TableCell><Skeleton className="h-8 w-16" /></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )
+    }
   }
 
   return (
@@ -114,8 +164,8 @@ const SearchPage = () => {
         </form>
       </div>
 
-      <ScrollArea className="w-full whitespace-nowrap mb-6">
-        <div className="flex w-max space-x-2 p-2">
+      {filteredProducts.length > 0 && <ScrollArea className="whitespace-nowrap mb-6 items-center">
+        <div className="flex justify-center space-x-2 p-2">
           {filterOptions.map((filter) => (
             <Button
               key={filter.id}
@@ -128,7 +178,7 @@ const SearchPage = () => {
           ))}
         </div>
         <ScrollBar orientation="horizontal" />
-      </ScrollArea>
+      </ScrollArea>}
 
       {filteredProducts.length > 0 && (
         <div className="mb-6 flex justify-between items-center">
@@ -166,24 +216,7 @@ const SearchPage = () => {
 
       <AnimatePresence>
         {isLoading ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
-          >
-            {[...Array(8)].map((_, index) => (
-              <Card key={index} className="overflow-hidden">
-                <CardHeader className="p-0">
-                  <Skeleton className="h-48 w-full" />
-                </CardHeader>
-                <CardContent className="p-4">
-                  <Skeleton className="h-4 w-3/4 mb-2" />
-                  <Skeleton className="h-4 w-1/2" />
-                </CardContent>
-              </Card>
-            ))}
-          </motion.div>
+          renderSkeletonLoader()
         ) : filteredProducts.length > 0 ? (
           <>
             {viewMode === "tile" ? (
@@ -207,125 +240,78 @@ const SearchPage = () => {
                           className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
                         />
                       </div>
-                      <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-opacity duration-300 flex items-center justify-center">
-                        <Button className="opacity-0 group-hover:opacity-100 transition-opacity duration-300" variant="secondary">
-                          View Details
-                        </Button>
-                      </div>
+                      <div className="absolute inset-0 bg-black opacity-0 hover:opacity-20 transition-opacity duration-300"></div>
                     </CardHeader>
                     <CardContent className="p-4">
-                      <CardTitle className="text-lg mb-2 line-clamp-2">{product.product_name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{product.brands}</p>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {product.is_organic && (
-                          <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                            Organic
-                          </span>
-                        )}
-                        {product.is_gluten_free && (
-                          <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                            Gluten-Free
-                          </span>
-                        )}
-                      </div>
+                      <CardTitle className="text-lg font-bold">{product.product_name}</CardTitle>
+                      <p className="text-sm text-muted-foreground">{product.brand}</p>
                     </CardContent>
                   </Card>
                 ))}
               </motion.div>
             ) : (
-              <Table>
+              <Table className="mt-6">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Image</TableHead>
                     <TableHead>Product Name</TableHead>
                     <TableHead>Brand</TableHead>
-                    <TableHead>Tags</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredProducts.map((product: any) => (
-                    <TableRow key={product.code} onClick={() => handleProductClick(product.product_name)} className="cursor-pointer hover:bg-muted">
+                    <TableRow key={product.code}>
                       <TableCell>
-                        <img
-                          src={product.image_url || "/placeholder.svg?height=50&width=50"}
+                        <Image
+                          src={product.image_url || "/placeholder.svg?height=64&width=64"}
                           alt={product.product_name}
-                          className="w-12 h-12 object-cover rounded"
+                          width={64}
+                          height={64}
+                          className="object-cover rounded"
                         />
                       </TableCell>
                       <TableCell>{product.product_name}</TableCell>
-                      <TableCell>{product.brands}</TableCell>
+                      <TableCell>{product.brand}</TableCell>
                       <TableCell>
-                        <div className="flex flex-wrap gap-2">
-                          {product.is_organic && (
-                            <span className="inline-block bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
-                              Organic
-                            </span>
-                          )}
-                          {product.is_gluten_free && (
-                            <span className="inline-block bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
-                              Gluten-Free
-                            </span>
-                          )}
-                        </div>
+                        <Button variant={"outline"} onClick={() => handleProductClick(product.product_name)}>View</Button>
                       </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
               </Table>
             )}
-            <div className="mt-8 flex justify-center items-center space-x-2">
-              <Button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="w-8 h-8 p-0"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </Button>
-              <span className="text-sm">
-                Page {currentPage} of {totalPages}
-              </span>
-              <Button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="w-8 h-8 p-0"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </Button>
-            </div>
           </>
         ) : (
-          searchTerm && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-center py-12"
-            >
-              <p className="text-xl text-muted-foreground">No food items found. Try adjusting your search or filters.</p>
-            </motion.div>
-          )
+          <div className="text-center text-muted-foreground">No products found.</div>
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {selectedProduct && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+      {filteredProducts.length > 0 && !isLoading && (
+        <div className="mt-8 flex justify-center items-center space-x-2">
+          <Button
+            disabled={currentPage === 1}
+            onClick={() => handlePageChange(currentPage - 1)}
+            variant="ghost"
           >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-background rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto relative"
-            >
-              <ProductModal productName={selectedProduct} onClose={closeModal} />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <ChevronLeft className="mr-2" /> Previous
+          </Button>
+          <p className="text-sm">
+            Page {currentPage} of {totalPages}
+          </p>
+          <Button
+            disabled={currentPage === totalPages}
+            onClick={() => handlePageChange(currentPage + 1)}
+            variant="ghost"
+          >
+            Next <ChevronRight className="ml-2" />
+          </Button>
+        </div>
+      )}
+
+      {selectedProduct && (
+        <ProductModal productName={selectedProduct} onClose={closeModal} />
+      )}
     </div>
   )
 }

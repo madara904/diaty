@@ -1,19 +1,10 @@
 "use server"
-
-import { auth } from "@/auth"
 import ProfileSection from "./components/ProfileSection"
-import { redirect } from "next/navigation"
 import { getUserData } from "@/lib/getUserData"
 import React from "react"
 
 export default async function Profile () {
-
-  const session = await auth()
  
-  if (!session || !session.user) {
-    redirect("/sign-in")
-  }
-
   const user = await getUserData();
 
   return (
