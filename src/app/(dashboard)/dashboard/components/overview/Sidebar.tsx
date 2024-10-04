@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Home, User, Settings, BookCheck, Menu, X, ArrowLeftToLine, ArrowRightToLine } from "lucide-react"
 import { Button } from "@/app/components/ui/Button"
 import Link from "next/link"
+import React from "react"
 
 interface SidebarItem {
   id: string
@@ -44,12 +45,15 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
     setIsMobileMenuOpen(false)
   }, [pathname])
 
-  const sidebarItems: SidebarItem[] = [
-    { id: "overview", label: "Overview", link: "/dashboard", icon: <Home className="w-6 h-6" /> },
-    { id: "diaty", label: "Diaty", link: "/dashboard/diaty", icon: <BookCheck className="w-6 h-6" /> },
-    { id: "profile", label: "Profile", link: "/dashboard/profile", icon: <User className="w-6 h-6" /> },
-    { id: "settings", label: "Settings", link: "/dashboard/settings", icon: <Settings className="w-6 h-6" /> },
-  ]
+  const sidebarItems: SidebarItem[] = useMemo(
+    () => [
+      { id: "overview", label: "Overview", link: "/dashboard", icon: <Home className="w-6 h-6" /> },
+      { id: "diaty", label: "Diaty", link: "/dashboard/diaty", icon: <BookCheck className="w-6 h-6" /> },
+      { id: "profile", label: "Profile", link: "/dashboard/profile", icon: <User className="w-6 h-6" /> },
+      { id: "settings", label: "Settings", link: "/dashboard/settings", icon: <Settings className="w-6 h-6" /> },
+    ],
+    []
+  )
 
   const isActive = (path: string) => pathname === path
 
@@ -60,48 +64,50 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
     router.push(link)
   }
 
-  const SidebarContent = () => (
-    <div className="p-4">
-      <div className="mb-10">
-        {!isMobileMenuOpen && (
-          <Button
-            onClick={toggleCollapse}
-            className="p-2 bg-gray-700 text-white hover:bg-gray-600 mx-1"
-            variant="ghost"
-          >
-            {isCollapsed ? (
-              <ArrowRightToLine className="transition-all" />
-            ) : (
-              <ArrowLeftToLine className="transition-all" />
-            )}
-          </Button>
-        )}
-      </div>
-
-      <ul className={cn("space-y-2", isCollapsed && "mt-8")}>
-        {sidebarItems.map((item) => (
-          <li key={item.id}>
-            <Link
-              href={item.link}
-              className={cn(
-                "flex items-center justify-start space-x-3 cursor-pointer p-2 rounded-md transition-all duration-200 w-full",
-                isActive(item.link) ? "bg-primary text-black" : "hover:bg-gray-700 hover:text-white"
-              )}
+  const SidebarContent = useMemo(
+    () => () => (
+      <div className="p-4">
+        <div className="mb-10">
+          {!isMobileMenuOpen && (
+            <Button
+              onClick={toggleCollapse}
+              className="p-2 bg-gray-700 text-white hover:bg-gray-600 mx-1"
+              variant="ghost"
             >
-              <div className="p-1 border-2 border-transparent rounded-full">
-                {item.icon}
-              </div>
-              {!isCollapsed && <span>{item.label}</span>}
-            </Link>
-          </li>
-        ))}
-      </ul>
-    </div>
+              {isCollapsed ? (
+                <ArrowRightToLine className="transition-all" />
+              ) : (
+                <ArrowLeftToLine className="transition-all" />
+              )}
+            </Button>
+          )}
+        </div>
+
+        <ul className={cn("space-y-2", isCollapsed && "mt-8")}>
+          {sidebarItems.map((item) => (
+            <li key={item.id}>
+              <Link
+                href={item.link}
+                className={cn(
+                  "flex items-center justify-start space-x-3 cursor-pointer p-2 rounded-md transition-all duration-200 w-full",
+                  isActive(item.link) ? "bg-primary text-black" : "hover:bg-gray-700 hover:text-white"
+                )}
+              >
+                <div className="p-1 border-2 border-transparent rounded-full">
+                  {item.icon}
+                </div>
+                {!isCollapsed && <span>{item.label}</span>}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+    ),
+    [isCollapsed, sidebarItems, isMobileMenuOpen, pathname]
   )
 
   return (
     <>
-   
       <Button
         onClick={toggleMobileMenu}
         className="fixed top-3 left-1 z-50 md:hidden focus:outline-none hover:bg-transparent"
@@ -110,14 +116,12 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
         {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
       </Button>
 
- 
       <div
         className={cn(
           "fixed inset-0 z-40 md:hidden transition-opacity duration-200 ease-in-out",
           isMobileMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
         )}
       >
-      
         <div 
           className={cn(
             "fixed inset-0 bg-black transition-opacity duration-200 ease-in-out",
@@ -126,7 +130,6 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
           onClick={toggleMobileMenu}
         />
 
-        
         <aside 
           className={cn(
             "fixed inset-y-0 left-0 w-64 bg-gray-800 text-primary overflow-y-auto transition-transform duration-200 ease-in-out",
@@ -137,7 +140,6 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
         </aside>
       </div>
 
-      
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-30 bg-gray-800 text-primary transform transition-all duration-300 ease-in-out hidden md:block",

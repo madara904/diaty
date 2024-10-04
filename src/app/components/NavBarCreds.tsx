@@ -7,6 +7,7 @@ import UserButton from "./UserButton";
 import { User } from "next-auth";
 import NotificationIcon from "./NotificationIcon";
 import { useSideBarContext } from "../../lib/context/SideBarContext";
+import React from "react";
 
 interface NavBarCredsProps {
   user: User | null | undefined,

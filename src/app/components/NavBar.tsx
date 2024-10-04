@@ -7,13 +7,8 @@ export default async function NavBar() {
   const user = session?.user;
 
   return (
-    <div
-      className="fixed top-0 inset-x-0 bg-white backdrop-blur bg-white/90 border-b border-zinc-300 z-[10] shadow-sm w-screen"
-    >
-
-        <div className="flex items-center">
-        <NavBarCreds user={user} session={session}/>
-        </div>
-      </div>
+    <div className="fixed top-0 inset-x-0 bg-white backdrop-blur bg-white/90 border-b border-zinc-300 z-[10] shadow-sm w-screen h-[65px]">
+        <NavBarCreds user={user} session={session} />
+    </div>
   );
 }
