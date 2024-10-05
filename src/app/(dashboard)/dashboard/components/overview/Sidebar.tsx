@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Home, User, Settings, BookCheck, Menu, X, ArrowLeftToLine, ArrowRightToLine } from "lucide-react"
+import { Home, User, Settings, BookCheck, Menu, X, ArrowLeftToLine, ArrowRightToLine, PlusIcon, Plus } from "lucide-react"
 import { Button } from "@/app/components/ui/Button"
 import Link from "next/link"
 import React from "react"
@@ -82,7 +82,6 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
             </Button>
           )}
         </div>
-
         <ul className={cn("space-y-2", isCollapsed && "mt-8")}>
           {sidebarItems.map((item) => (
             <li key={item.id}>

@@ -48,6 +48,7 @@ const Settings = ({ plan, user, availablePlans }: SettingsProps) => {
           title: "Success",
           description: `You have successfully changed to the ${selectedPlan} plan.`,
           variant: "default",
+          duration: 2000
         });
       } else {
         toast({
@@ -75,7 +76,7 @@ const Settings = ({ plan, user, availablePlans }: SettingsProps) => {
       <CardContent>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={() => setIsDialogOpen(true)} className="text-white bg-gradient-to-r from-purple-500 to-indigo-600 ring-1 ring-purple-900/5 shadow-lg space-y-3 hover:bg-gradient-to-r hover:from-pink-500 hover:to-purple-600 hover:ring-pink-500 transition-all duration-300">Change my Plan</Button>
+            <Button onClick={() => setIsDialogOpen(true)}>Change my Plan</Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
