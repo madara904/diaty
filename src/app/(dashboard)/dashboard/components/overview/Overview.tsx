@@ -5,7 +5,6 @@ import { format, addDays, subDays } from 'date-fns'
 import { ChevronLeft, ChevronRight, PlusCircle, History, TrendingUp, Settings, Utensils, Activity, Scale, Calendar as CalendarIcon, ArrowRight, Bell, User, LogOut, Plus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/app/components/ui/card"
 import { Button } from "@/app/components/ui/Button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/app/components/ui/dialog"
 import { z } from 'zod'
 import { useForm, UseFormReturn } from 'react-hook-form'
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -80,13 +79,13 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
   return (
     <div className="mt-24 mb-12 overflow-auto">
 <Card className="w-full mb-6">
-  <CardContent className="p-4 md:p-6"> {/* Adjust padding for mobile */}
+  <CardContent className="p-4 md:p-6">
     <div className="flex flex-col md:flex-row items-center justify-between w-full">
-      <div className="flex items-center space-x-4 mb-4 md:mb-0"> {/* Add margin for spacing on mobile */}
+      <div className="flex items-center space-x-4 mb-4 md:mb-0"> 
         <User className="h-12 w-12 text-muted-foreground" />
         <div>
           <motion.h2
-            className="text-lg md:text-2xl font-semibold text-foreground" // Responsive text size
+            className="text-lg md:text-2xl font-semibold text-foreground" 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
@@ -96,13 +95,13 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
               ? user.name.split(' ')[0].charAt(0).toUpperCase() + user.name.split(' ')[0].slice(1)
               : 'User'}
           </motion.h2>
-          <p className="text-sm md:text-base text-muted-foreground"> {/* Responsive paragraph size */}
+          <p className="text-sm md:text-base text-muted-foreground"> 
             Let's continue your nutrition journey today.
           </p>
         </div>
       </div>
       <div className='flex w-full sm:block sm:max-w-fit mt-4 sm:mt-0'>
-      <Button variant={'outline'} onClick={() => setIsFormOpen(true)} className="font-bold p-4 md:p-6"> {/* Adjust padding for button */}
+      <Button variant={'outline'} onClick={() => setIsFormOpen(true)} className="font-bold p-4 md:p-6"> 
         <Plus size={20} className="mr-2 text-foreground" />
         Add intakes
       </Button>

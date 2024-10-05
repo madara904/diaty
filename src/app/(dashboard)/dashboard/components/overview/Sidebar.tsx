@@ -1,12 +1,14 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Home, User, Settings, BookCheck, Menu, X, ArrowLeftToLine, ArrowRightToLine, PlusIcon, Plus } from "lucide-react"
 import { Button } from "@/app/components/ui/Button"
 import Link from "next/link"
 import React from "react"
+import { useLoading } from "../ui/LoadingProvider"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip"
 
 interface SidebarItem {
   id: string
@@ -25,6 +27,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { startLoading } = useLoading()
 
   const toggleCollapse = () => setIsCollapsed(!isCollapsed)
   const toggleMobileMenu = () => setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -57,12 +60,13 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
 
   const isActive = (path: string) => pathname === path
 
-  const handleItemClick = (link: string) => {
+  const handleItemClick = useCallback((link: string) => {
     if (window.innerWidth < 768) {
       setIsMobileMenuOpen(false)
     }
+    startLoading()
     router.push(link)
-  }
+  }, [router, startLoading])
 
   const SidebarContent = useMemo(
     () => () => (
@@ -85,31 +89,46 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
         <ul className={cn("space-y-2", isCollapsed && "mt-8")}>
           {sidebarItems.map((item) => (
             <li key={item.id}>
-              <Link
-                href={item.link}
-                className={cn(
-                  "flex items-center justify-start space-x-3 cursor-pointer p-2 rounded-md transition-all duration-200 w-full",
-                  isActive(item.link) ? "bg-primary text-black" : "hover:bg-gray-700 hover:text-white"
-                )}
-              >
-                <div className="p-1 border-2 border-transparent rounded-full">
-                  {item.icon}
-                </div>
-                {!isCollapsed && <span>{item.label}</span>}
-              </Link>
+              <TooltipProvider>
+                <Tooltip delayDuration={100}>
+                  <TooltipTrigger asChild>
+                    <Link
+                      href={item.link}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        handleItemClick(item.link)
+                      }}
+                      className={cn(
+                        "flex items-center justify-start space-x-3 cursor-pointer p-2 rounded-md transition-all duration-200 w-full",
+                        isActive(item.link) ? "bg-primary text-black" : "hover:bg-gray-700 hover:text-white"
+                      )}
+                    >
+                      <div className="p-1 border-2 border-transparent rounded-full">
+                        {item.icon}
+                      </div>
+                      {!isCollapsed && <span>{item.label}</span>}
+                    </Link>
+                  </TooltipTrigger>
+                  {isCollapsed && (
+                    <TooltipContent side="right">
+                      <p>{item.label}</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
             </li>
           ))}
         </ul>
       </div>
     ),
-    [isCollapsed, sidebarItems, isMobileMenuOpen, pathname]
+    [isCollapsed, sidebarItems, isMobileMenuOpen, pathname, handleItemClick]
   )
 
   return (
     <>
       <Button
         onClick={toggleMobileMenu}
-        className="fixed top-3 left-1 z-50 md:hidden focus:outline-none hover:bg-transparent"
+        className="fixed top-3 left-1 z-10 md:hidden focus:outline-none hover:bg-transparent"
         variant="ghost"
       >
         {isMobileMenuOpen ? <X size={22} /> : <Menu size={22} />}

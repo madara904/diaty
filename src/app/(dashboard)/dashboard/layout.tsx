@@ -7,6 +7,8 @@ import "@/app/(index)/globals.css";
 import { Toaster } from "@/app/components/ui/toaster";
 import LayoutWrapper from "./components/overview/LayoutWrapper";
 import { SideBarProvider } from "@/lib/context/SideBarContext";
+import LoadingBar from "./components/ui/LoadingBar";
+import { LoadingProvider } from "./components/ui/LoadingProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,11 +31,14 @@ export default function RootLayout({
       >
         <SessionProvider>
           <SideBarProvider>
-            <LayoutWrapper>
-              <NavBar />
-              <main className="container">{children}</main>
-            </LayoutWrapper>
-            <Toaster />
+            <LoadingProvider>
+              <LayoutWrapper>
+                <LoadingBar />
+                <NavBar />
+                <main className="container">{children}</main>
+              </LayoutWrapper>
+              <Toaster />
+            </LoadingProvider>
           </SideBarProvider>
         </SessionProvider>
       </body>
