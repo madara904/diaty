@@ -97,7 +97,7 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
             Add intakes
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-80">
+        <PopoverContent className="w-80 ml-12 sm:m-0">
           <div className="grid gap-4">
             <div className="space-y-2">
               <h4 className="font-medium leading-none">Nutrition</h4>
