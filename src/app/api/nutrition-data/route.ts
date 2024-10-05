@@ -37,7 +37,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Failed to save nutrition data" }, { status: 500 });
   }
 }
-
-export async function GET(res: NextResponse) {
-
-}
