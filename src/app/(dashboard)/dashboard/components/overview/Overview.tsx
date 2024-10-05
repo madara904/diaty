@@ -16,6 +16,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { Input } from "@/app/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover"
 import { Calendar } from "@/app/components/ui/calendar"
+import { motion } from 'framer-motion'
 
 const mockData = {
   "2024-10-01": { caloriesConsumed: 3200, carbsConsumed: 150, proteinsConsumed: 100, fatsConsumed: 70 },
@@ -68,7 +69,6 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
   const data = mockData[dateKey as keyof typeof mockData] || { caloriesConsumed: 0, carbsConsumed: 0, proteinsConsumed: 0, fatsConsumed: 0 }
 
   const gaugeColor = data.caloriesConsumed > (plan?.dailyCalories ?? 0) ? 'text-red-500' : 'text-green-500'
-  const percentage = Math.min((data.caloriesConsumed / (plan?.dailyCalories ?? 1)) * 100, 100)
   const remainingCalories = (plan?.dailyCalories ?? 0) - data.caloriesConsumed
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
@@ -76,15 +76,29 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
   }
 
   return (
-    <div className=" py-8 mt-16">
-      <div className="bg-foreground/60 text-white rounded-lg p-6 mb-8 shadow-lg">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h2 className="text-2xl font-bold">Welcome back, <br></br> <span className='text-3xl text-primary'>{user?.name || 'User'}</span>!</h2>
-            <p className="">Let's keep track of your nutrition journey.</p>
+    <div className="mt-24">
+      <Card className="w-full mb-6">
+        <CardContent className="p-6">
+          <div className="flex items-center space-x-4">
+            <div className="flex-shrink-0">
+              <User className="h-12 w-12 text-muted-foreground" />
+            </div>
+            <div>
+              <motion.h2
+                className="text-2xl font-semibold text-foreground"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                Welcome back,     {user?.name ?
+                  user.name.split(' ')[0].charAt(0).toUpperCase() + user.name.split(' ')[0].slice(1)
+                  : 'User'}
+              </motion.h2>
+              <p className="text-muted-foreground">Let's continue your nutrition journey today.</p>
+            </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-4 sm:mb-0">Nutrition Dashboard</h1>
         <div className="flex items-center space-x-2">
@@ -210,7 +224,7 @@ function MacroProgress({ label, consumed, total, color }: MacroProgressProps) {
         <span>{label}</span>
         <span>{consumed}g / {total}g</span>
       </div>
-      <Progress value={percentage} className="h-2"/>
+      <Progress value={percentage} className="h-2" />
     </div>
   )
 }

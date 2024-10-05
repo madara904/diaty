@@ -14,6 +14,7 @@ import { Skeleton } from "@/app/components/ui/skeleton"
 import React from "react"
 import { ScrollArea, ScrollBar } from "@/app/components/ui/scroll-area"
 import Image from "next/image"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip"
 
 const DiatySearch = () => {
   const [searchTerm, setSearchTerm] = useState("")
@@ -30,13 +31,13 @@ const DiatySearch = () => {
   const selectedProduct = searchParams.get("product")
 
   const filterOptions = [
-    { id: "organic", label: "Organic" },
-    { id: "gluten_free", label: "Gluten-Free" },
-    { id: "vegan", label: "Vegan" },
-    { id: "vegetarian", label: "Vegetarian" },
-    { id: "low_sugar", label: "Low Sugar" },
-    { id: "low_fat", label: "Low Fat" },
-  ]
+    { id: "organic", label: "Organic", icon: "🌿" },
+    { id: "gluten_free", label: "Gluten-Free", icon: "🌾" },
+    { id: "vegan", label: "Vegan", icon: "🥬" },
+    { id: "vegetarian", label: "Vegetarian", icon: "🥕" },
+    { id: "low_sugar", label: "Low Sugar", icon: "🍬" },
+    { id: "low_fat", label: "Low Fat", icon: "💪" },
+  ];
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -141,44 +142,54 @@ const DiatySearch = () => {
   }
 
   return (
-    <div className="px-4 py-8 mt-24">
-      <div className="bg-gradient-to-r from-primary to-primary-foreground p-8 rounded-lg shadow-lg mb-12">
-        <h1 className="text-4xl font-bold mb-4 text-background text-center">Discover Healthy Foods</h1>
-        <p className="text-background text-center mb-8">Search, explore, and learn about nutritious options for your diet</p>
-        <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
-          <div className="flex items-center space-x-2 flex-col space-y-5 sm:flex-row sm:space-y-0">
-            <div className="relative flex-grow">
-              <Input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 w-full bg-background text-foreground"
-                placeholder="Search for a food item"
-              />
-              <Search id="search" className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
-            </div>
-            <Button type="submit" className="bg-background hover:bg-background/90 w-5/6 sm:w-min">
-              Search
-            </Button>
+    <div className="container mx-auto px-4 py-8 mt-24">
+    <div className="bg-gradient-to-r from-primary to-primary-foreground p-8 rounded-lg shadow-lg mb-12">
+      <h1 className="text-4xl font-bold mb-4 text-background text-center">Discover Healthy Foods</h1>
+      <p className="text-background text-center mb-8">Search, explore, and learn about nutritious options for your diet</p>
+      <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
+        <div className="flex items-center space-x-2 flex-col space-y-5 sm:flex-row sm:space-y-0">
+          <div className="relative flex-grow">
+            <Input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 w-full bg-background text-foreground"
+              placeholder="Search for a food item"
+            />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
           </div>
-        </form>
-      </div>
-
-      {products.length > 0 && <ScrollArea className="whitespace-nowrap mb-6 items-center">
-        <div className="flex justify-center space-x-2 p-2">
-          {filterOptions.map((filter) => (
-            <Button
-              key={filter.id}
-              onClick={() => toggleFilter(filter.id)}
-              variant={activeFilters.includes(filter.id) ? "default" : "outline"}
-              className="rounded-full text-xs py-1 px-3 h-auto"
-            >
-              {filter.label}
-            </Button>
-          ))}
+          <Button type="submit" className="bg-background hover:bg-background/90 w-5/6 sm:w-min">
+            Search
+          </Button>
         </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>}
+      </form>
+    </div>
+
+      {products.length > 0 && (
+        <ScrollArea className="whitespace-nowrap mb-6">
+          <div className="flex justify-center space-x-2 p-2">
+            {filterOptions.map((filter) => (
+              <TooltipProvider key={filter.id}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => toggleFilter(filter.id)}
+                      variant={activeFilters.includes(filter.id) ? "default" : "outline"}
+                      className="rounded-full text-xs py-1 px-3 h-auto"
+                    >
+                      {filter.icon} {filter.label}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Filter by {filter.label}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ))}
+          </div>
+          <ScrollBar orientation="horizontal" />
+        </ScrollArea>
+      )}
 
       {filteredProducts.length > 0 && (
   <div className="flex flex-col-reverse justify-around sm:flex-row sm:justify-between sm:items-center mb-6 space-x-2 sm:space-x-0">
