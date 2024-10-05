@@ -3,6 +3,7 @@ import fetchPlan from "@/lib/fetch-user-plan";
 import Overview from "./components/overview/Overview";
 import checkFlag from "@/lib/check-completion-flag";
 import { redirect } from "next/navigation";
+import React from "react";
 
 
 const Dashboard = async () => {

@@ -2,12 +2,10 @@
 
 import React, { useState, useEffect } from 'react'
 import { format, addDays, subDays } from 'date-fns'
-import { ChevronLeft, ChevronRight, PlusCircle, History, TrendingUp, Settings, Utensils, Activity, Scale, Calendar as CalendarIcon, ArrowRight, Bell, User, LogOut, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, History, TrendingUp, Settings, Utensils, Calendar as CalendarIcon, ArrowRight, User, Plus, Coffee, Moon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/app/components/ui/card"
 import { Button } from "@/app/components/ui/Button"
-import { z } from 'zod'
 import { useForm, UseFormReturn } from 'react-hook-form'
-import { zodResolver } from "@hookform/resolvers/zod"
 import { Session } from 'next-auth'
 import { Plan } from '@/types/plan'
 import { Progress } from "@/app/components/ui/progress"
@@ -16,7 +14,8 @@ import { Input } from "@/app/components/ui/input"
 import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover"
 import { Calendar } from "@/app/components/ui/calendar"
 import { motion } from 'framer-motion'
-import NutritionIntakeForm from './NutritionIntakeForm'
+import FoodIntakeTracker from '../../intakes/components/food-intake-tracker'
+import { cn } from '@/lib/utils'
 
 const mockData = {
   "2024-10-01": { caloriesConsumed: 3200, carbsConsumed: 150, proteinsConsumed: 100, fatsConsumed: 70 },
@@ -31,28 +30,20 @@ interface OverviewProps {
   plan: Plan | undefined | null
 }
 
-const formSchema = z.object({
-  Calories: z.coerce.number().positive(),
-  Carbs: z.coerce.number().positive(),
-  Fats: z.coerce.number().positive(),
-  Proteins: z.coerce.number().positive(),
-})
-
 export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date())
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [recentIntakes, setRecentIntakes] = useState<Array<{ date: string; calories: number }>>([])
-  const [isFormOpen, setIsFormOpen] = useState(false)
 
-  const form = useForm({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      Calories: 0,
-      Carbs: 0,
-      Fats: 0,
-      Proteins: 0,
-    },
-  })
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false)
+  const [selectedMeal, setSelectedMeal] = useState<'Breakfast' | 'Lunch' | 'Dinner' | null>(null)
+
+  const openModal = (meal: 'Breakfast' | 'Lunch' | 'Dinner') => {
+    setSelectedMeal(meal)
+    setIsModalOpen(true)
+    setIsPopoverOpen(false)
+  }
 
   useEffect(() => {
     const recent = Object.entries(mockData)
@@ -72,12 +63,9 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
   const gaugeColor = data.caloriesConsumed > (plan?.dailyCalories ?? 0) ? 'text-red-500' : 'text-green-500'
   const remainingCalories = (plan?.dailyCalories ?? 0) - data.caloriesConsumed
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log(values)
-  }
 
   return (
-    <div className="mt-24 mb-12 overflow-auto">
+    <div className={cn("mt-24")}>
 <Card className="w-full mb-6">
   <CardContent className="p-4 md:p-6">
     <div className="flex flex-col md:flex-row items-center justify-between w-full">
@@ -101,10 +89,56 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
         </div>
       </div>
       <div className='flex w-full sm:block sm:max-w-fit mt-4 sm:mt-0'>
-      <Button variant={'outline'} onClick={() => setIsFormOpen(true)} className="font-bold p-4 md:p-6"> 
-        <Plus size={20} className="mr-2 text-foreground" />
-        Add intakes
-      </Button>
+        <div>
+        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+        <PopoverTrigger asChild>
+          <Button variant="outline" className="font-bold p-4 md:p-6">
+            <Plus size={20} className="mr-2 text-foreground" />
+            Add intakes
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-80">
+          <div className="grid gap-4">
+            <div className="space-y-2">
+              <h4 className="font-medium leading-none">Nutrition</h4>
+              <p className="text-sm text-muted-foreground">
+                Select from below
+              </p>
+            </div>
+            <div className="grid gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Coffee className="mr-2 h-4 w-4" />
+                  <span>Breakfast</span>
+                </div>
+                <Button size="sm" onClick={() => openModal('Breakfast')}>Add</Button>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Utensils className="mr-2 h-4 w-4" />
+                  <span>Lunch</span>
+                </div>
+                <Button size="sm" onClick={() => openModal('Lunch')}>Add</Button>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Moon className="mr-2 h-4 w-4" />
+                  <span>Dinner</span>
+                </div>
+                <Button size="sm" onClick={() => openModal('Dinner')}>Add</Button>
+              </div>
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {isModalOpen && selectedMeal && (
+        <FoodIntakeTracker
+          mealType={selectedMeal}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
+    </div>
       </div>
     </div>
   </CardContent>
@@ -198,10 +232,6 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
             </div>
           </CardContent>
           <CardFooter>                
-                <NutritionIntakeForm 
-        isOpen={isFormOpen} 
-        onClose={() => setIsFormOpen(false)} 
-      />
           </CardFooter>
         </Card>
       </div>

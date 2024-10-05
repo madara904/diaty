@@ -12,7 +12,8 @@ export function LoadingProvider({ children }: { children: React.ReactNode }) {
 
   const startLoading = useCallback(() => {
     setLoading(true)
-    setTimeout(() => setLoading(false), 1)
+
+    setTimeout(() => setLoading(false), 5000) 
   }, [])
 
   const stopLoading = useCallback(() => {

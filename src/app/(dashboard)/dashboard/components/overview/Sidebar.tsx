@@ -44,7 +44,6 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   }, [])
 
   useEffect(() => {
-    // Close mobile sidebar on route change
     setIsMobileMenuOpen(false)
   }, [pathname])
 
