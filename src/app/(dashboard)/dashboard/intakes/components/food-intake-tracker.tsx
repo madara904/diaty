@@ -53,6 +53,7 @@ type FoodIntakeTrackerProps = {
 export default function FoodIntakeTracker({ mealType, onClose }: FoodIntakeTrackerProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<any[]>([])
+  
 
   const form = useForm<ManualEntryForm>({
     resolver: zodResolver(manualEntrySchema),

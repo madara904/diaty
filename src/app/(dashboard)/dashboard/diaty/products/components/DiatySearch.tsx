@@ -2,19 +2,22 @@
 
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Search, X, Filter, ChevronLeft, ChevronRight, Grid, List } from "lucide-react"
+import { Search, X, Filter, ChevronLeft, ChevronRight, Grid, List, MoreHorizontal, EllipsisVertical, Eye, PlusCircle } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import ProductModal from "./ProductModal"
 import { Input } from "@/app/components/ui/input"
 import { Button } from "@/app/components/ui/Button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/app/components/ui/table"
-import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/app/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select"
 import { Skeleton } from "@/app/components/ui/skeleton"
 import React from "react"
 import { ScrollArea, ScrollBar } from "@/app/components/ui/scroll-area"
 import Image from "next/image"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/app/components/ui/tooltip"
+import { useBodyScrollLock } from "@/app/components/hooks/use-body-scroll-lock"
+import { Badge } from "@/app/components/ui/badge"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/app/components/ui/dropdown-menu"
 
 const DiatySearch = () => {
   const [searchTerm, setSearchTerm] = useState("")
@@ -30,12 +33,14 @@ const DiatySearch = () => {
   const searchParams = useSearchParams()
   const selectedProduct = searchParams.get("product")
 
+  useBodyScrollLock(!!selectedProduct)
+
   const filterOptions = [
     { id: "organic", label: "Organic", icon: "🌿" },
-    { id: "gluten_free", label: "Gluten-Free", icon: "🌾" },
+    { id: "gluten", label: "Gluten-Free", icon: "🌾" },
     { id: "vegan", label: "Vegan", icon: "🥬" },
     { id: "vegetarian", label: "Vegetarian", icon: "🥕" },
-    { id: "low_sugar", label: "Low Sugar", icon: "🍬" },
+    { id: "low_sugars", label: "Low Sugar", icon: "🍬" },
     { id: "low_fat", label: "Low Fat", icon: "💪" },
   ];
 
@@ -51,8 +56,8 @@ const DiatySearch = () => {
     const data = await res.json()
     if (res.ok) {
       setProducts(data.products || [])
-      setFilteredProducts(data.products || [])
       setTotalPages(data.totalPages)
+      console.log(data)
     }
     setIsLoading(false)
   }
@@ -67,7 +72,15 @@ const DiatySearch = () => {
 
   useEffect(() => {
     const filtered = products.filter((product: any) => {
-      return activeFilters.every(filter => product[filter])
+      return activeFilters.every(filter => {
+        if (filter === 'low_sugars') {
+          return product.nutriments && product.nutriments.sugars_100g < 5
+        }
+        if (filter === 'low_fat') {
+          return product.nutriments && product.nutriments.fat_100g < 3
+        }
+        return product[filter] === 1 || product.labels?.toLowerCase().includes(filter)
+      })
     })
 
     const sorted = [...filtered].sort((a: any, b: any) => {
@@ -92,6 +105,51 @@ const DiatySearch = () => {
         : [...prev, filterId]
     )
   }
+
+  const renderTags = (product: any) => {
+    const tags = []
+    if (product.organic === 1) tags.push("Organic")
+    if (product.labels?.toLowerCase().includes("gluten")) tags.push("Gluten-Free")
+    if (product.labels?.toLowerCase().includes("vegan")) tags.push("Vegan")
+    if (product.labels?.toLowerCase().includes("vegetarian")) tags.push("Vegetarian")
+
+    const sugarThreshold = 5;
+    const fatThreshold = 3;
+
+    const isSnackFood = product.categories?.toLowerCase().includes("chips") ||
+      product.categories?.toLowerCase().includes("snack") ||
+      product.categories?.toLowerCase().includes("fries") || 
+      product.categories?.toLowerCase().includes("burger")
+    if (!isSnackFood && product.nutriments?.sugars_100g !== undefined && product.nutriments.sugars_100g < sugarThreshold) {
+      tags.push("Low Sugar");
+    }
+    if (!isSnackFood && product.nutriments?.fat_100g !== undefined && product.nutriments.fat_100g < fatThreshold) {
+      tags.push("Low Fat");
+    }
+    return tags
+  }
+
+  const renderProductActions = (product: any) => (
+    <div className="flex justify-end">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <MoreHorizontal className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => handleProductClick(product.product_name)}>
+          <Eye className="mr-2 h-4 w-4" />
+          View Details
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => {}}>
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Add Intake
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+    </div>
+  )
 
   const renderSkeletonLoader = () => {
     if (viewMode === "tile") {
@@ -142,31 +200,31 @@ const DiatySearch = () => {
   }
 
   return (
-    <div className="px-4 mt-24">
-    <div className="p-8 rounded-lg hover:shadow-sm mb-12 text-foreground">
-      <h1 className="text-4xl font-bold mb-4 text-center">Discover Healthy Foods</h1>
-      <p className="text-foreground/70 text-center mb-8">Search, explore, and learn about nutritious options for your diet</p>
-      <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
-        <div className="flex sm:space-x-2 flex-col space-y-5 sm:flex-row sm:space-y-0">
-          <div className="relative sm:flex-grow">
-            <Input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 py-2 w-full bg-background text-foreground"
-              placeholder="Search for a food item"
-            />
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
+    <div className="px-4 mt-24 mb-6">
+      <div className="p-8 rounded-lg hover:shadow-sm mb-12 text-foreground">
+        <h1 className="text-4xl font-bold mb-4 text-center">Discover Healthy Foods</h1>
+        <p className="text-foreground/70 text-center mb-8">Search, explore, and learn about nutritious options for your diet</p>
+        <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
+          <div className="flex sm:space-x-2 flex-col space-y-5 sm:flex-row sm:space-y-0">
+            <div className="relative sm:flex-grow">
+              <Input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 py-2 w-full bg-background text-foreground"
+                placeholder="Search for a food item"
+              />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
+            </div>
+            <Button type="submit" className="bg-primary hover:bg-primary/70 w-full sm:w-min">
+              Search
+            </Button>
           </div>
-          <Button type="submit" className="bg-primary hover:bg-primary/70 w-full sm:w-min">
-            Search
-          </Button>
-        </div>
-      </form>
-    </div>
+        </form>
+      </div>
 
       {products.length > 0 && (
-        <ScrollArea className="whitespace-nowrap mb-6">
+        <ScrollArea className="">
           <div className="flex justify-center space-x-2 p-2">
             {filterOptions.map((filter) => (
               <TooltipProvider key={filter.id}>
@@ -192,40 +250,40 @@ const DiatySearch = () => {
       )}
 
       {filteredProducts.length > 0 && (
-  <div className="flex flex-col-reverse justify-around sm:flex-row sm:justify-between sm:items-center mb-6 space-x-2 sm:space-x-0">
-    <p className="text-sm text-muted-foreground text-center sm:text-left">
-      Showing {filteredProducts.length} results
-    </p>
-    <div className="flex items-center justify-center sm:justify-start space-x-4">
-      <Select onValueChange={setSortOption}>
-        <SelectTrigger className="w-[180px]">
-          <SelectValue placeholder="Sort by" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="relevance">Relevance</SelectItem>
-          <SelectItem value="name_asc">Name (A-Z)</SelectItem>
-          <SelectItem value="name_desc">Name (Z-A)</SelectItem>
-        </SelectContent>
-      </Select>
-      <div className="flex space-x-2">
-        <Button
-          variant={viewMode === "tile" ? "default" : "outline"}
-          size="icon"
-          onClick={() => setViewMode("tile")}
-        >
-          <Grid className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={viewMode === "table" ? "default" : "outline"}
-          size="icon"
-          onClick={() => setViewMode("table")}
-        >
-          <List className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  </div>
-)}
+        <div className="flex flex-col-reverse justify-around sm:flex-row sm:justify-between sm:items-center mb-6 space-x-2 sm:space-x-0">
+          <p className="text-sm text-muted-foreground text-center sm:text-left">
+            Showing {filteredProducts.length} results
+          </p>
+          <div className="flex items-center justify-center sm:justify-start space-x-4">
+            <Select onValueChange={setSortOption}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Sort by" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="relevance">Relevance</SelectItem>
+                <SelectItem value="name_asc">Name (A-Z)</SelectItem>
+                <SelectItem value="name_desc">Name (Z-A)</SelectItem>
+              </SelectContent>
+            </Select>
+            <div className="flex space-x-2">
+              <Button
+                variant={viewMode === "tile" ? "default" : "outline"}
+                size="icon"
+                onClick={() => setViewMode("tile")}
+              >
+                <Grid className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={viewMode === "table" ? "default" : "outline"}
+                size="icon"
+                onClick={() => setViewMode("table")}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <AnimatePresence>
         {isLoading ? (
@@ -242,23 +300,31 @@ const DiatySearch = () => {
                 {filteredProducts.map((product: any) => (
                   <Card
                     key={product.code}
-                    onClick={() => handleProductClick(product.product_name)}
-                    className="cursor-pointer hover:shadow-lg transition-shadow duration-300 overflow-hidden group"
+                    className="hover:shadow-lg transition-shadow duration-300 overflow-hidden group"
                   >
-                    <CardHeader className="p-0 relative">
+                    <CardHeader className="p-0">
                       <div className="w-full h-48 overflow-hidden">
                         <img
                           src={product.image_url || "/placeholder.svg?height=200&width=300"}
                           alt={product.product_name}
-                          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                          className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-105"
                         />
                       </div>
-                      <div className="absolute inset-0 bg-black opacity-0 hover:opacity-20 transition-opacity duration-300"></div>
                     </CardHeader>
                     <CardContent className="p-4">
-                      <CardTitle className="text-lg font-bold">{product.product_name}</CardTitle>
-                      <p className="text-sm text-muted-foreground">{product.brand}</p>
+                      <div className="flex items-center justify-between mb-2">
+                        <CardTitle className="text-lg font-bold truncate mr-2">{product.product_name}</CardTitle>
+                        {renderProductActions(product)}
+                      </div>
+                      <p className="text-sm text-muted-foreground">{product.brands}</p>
                     </CardContent>
+                    <CardFooter className="p-4 pt-0 flex flex-wrap gap-1">
+                      {renderTags(product).map((tag, index) => (
+                        <Badge key={index} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </CardFooter>
                   </Card>
                 ))}
               </motion.div>
@@ -269,6 +335,7 @@ const DiatySearch = () => {
                     <TableHead>Image</TableHead>
                     <TableHead>Product Name</TableHead>
                     <TableHead>Brand</TableHead>
+                    <TableHead>Tags</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -285,9 +352,18 @@ const DiatySearch = () => {
                         />
                       </TableCell>
                       <TableCell>{product.product_name}</TableCell>
-                      <TableCell>{product.brand}</TableCell>
+                      <TableCell>{product.brands}</TableCell>
                       <TableCell>
-                        <Button variant={"outline"} onClick={() => handleProductClick(product.product_name)}>View</Button>
+                        <div className="flex flex-wrap gap-1">
+                          {renderTags(product).map((tag, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        {renderProductActions(product)}
                       </TableCell>
                     </TableRow>
                   ))}

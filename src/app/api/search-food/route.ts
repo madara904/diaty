@@ -53,7 +53,14 @@ export async function GET(req: Request) {
 
     const data = await response.json();
     const validProducts = data.products?.filter((product: any) => {
-      return product.product_name && product.image_url && !product.error;
+      const hasValidNutrients = product.nutriments && 
+                                (product.nutriments.calories || product.nutriments.carbohydrates || product.nutriments.proteins);
+      return product.product_name && 
+             product.image_url && 
+             product.image_small_url &&
+             product.image_thumb_url &&  
+             !product.error && 
+             hasValidNutrients;
     }) || [];
 
     if (validProducts.length === 0) {

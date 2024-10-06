@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import { ChevronLeft, Heart, AlertCircle } from "lucide-react"
-import Image from "next/image"
 import { Skeleton } from "@/app/components/ui/skeleton"
 import { Input } from "@/app/components/ui/input"
 import { Button } from "@/app/components/ui/Button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
 import { Alert, AlertDescription, AlertTitle } from "@/app/components/ui/alert"
+import { Badge } from "@/app/components/ui/badge"
+import Image from "next/image"
 
 interface ProductModalProps {
   productName: string
@@ -17,8 +18,11 @@ interface ProductModalProps {
 }
 
 interface Product {
+  allergens_tags: any
   product_name: string
   image_url: string
+  image_small_url: string
+  image_thumb_url: string
   nutriments: {
     [key: string]: number
     proteins: number
@@ -26,9 +30,10 @@ interface Product {
     fat: number
     "energy-kcal": number
   }
-  allergens: string
-  isVegan: boolean
-  isGlutenFree: boolean
+  allergen: string
+  categories?: string
+  labels?: string
+  organic?: number
 }
 
 const ProductModal = ({ productName, onClose }: ProductModalProps) => {
@@ -36,6 +41,29 @@ const ProductModal = ({ productName, onClose }: ProductModalProps) => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [grams, setGrams] = useState<number>(100)
+
+  const renderTags = (product: Product) => {
+    const tags = []
+    if (product.organic === 1) tags.push("Organic")
+    if (product.labels?.toLowerCase().includes("gluten")) tags.push("Gluten-Free")
+    if (product.labels?.toLowerCase().includes("vegan")) tags.push("Vegan")
+    if (product.labels?.toLowerCase().includes("vegetarian")) tags.push("Vegetarian")
+
+    const sugarThreshold = 3;
+    const fatThreshold = 3;
+
+    const isSnackFood = product.categories?.toLowerCase().includes("chips") ||
+      product.categories?.toLowerCase().includes("snack") ||
+      product.categories?.toLowerCase().includes("fries") || 
+      product.categories?.toLowerCase().includes("burger")
+    if (!isSnackFood && product.nutriments?.sugars_100g !== undefined && product.nutriments.sugars_100g < sugarThreshold) {
+      tags.push("Low Sugar");
+    }
+    if (!isSnackFood && product.nutriments?.fat_100g !== undefined && product.nutriments.fat_100g < fatThreshold) {
+      tags.push("Low Fat");
+    }
+    return tags
+  }
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -73,7 +101,7 @@ const ProductModal = ({ productName, onClose }: ProductModalProps) => {
   }, [onClose])
 
   const calculateNutrition = (nutrientValue: number) => {
-    return ((nutrientValue / 100) * grams).toFixed(1)
+    return ((nutrientValue / 100) * grams).toFixed(1) || "0"
   }
 
   const featuredRecipes = [
@@ -134,16 +162,25 @@ const ProductModal = ({ productName, onClose }: ProductModalProps) => {
             <div className="space-y-8">
               <div className="flex flex-col md:flex-row gap-8">
                 <div className="w-full md:w-1/3">
-                  <Image
-                    src={productData.image_url}
-                    alt={productData.product_name}
-                    width={300}
-                    height={300}
-                    className="w-full h-auto object-cover rounded-lg shadow-lg"
-                  />
+                  <div className="aspect-square overflow-hidden rounded-lg">
+                    <Image
+                      src={productData.image_url}
+                      alt={productData.product_name}
+                      height={300}
+                      width={300}
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
                 </div>
                 <div className="md:w-2/3">
                   <h2 className="text-3xl font-bold mb-4">{productData.product_name}</h2>
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {renderTags(productData).map((tag, index) => (
+                      <Badge key={index} variant="secondary">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
                   <div className="mb-6">
                     <label htmlFor="grams" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Serving size (grams):
@@ -152,7 +189,7 @@ const ProductModal = ({ productName, onClose }: ProductModalProps) => {
                       type="number"
                       id="grams"
                       value={grams}
-                      onChange={(e) => setGrams(Number(e.target.value))}
+                      onChange={(e) => setGrams(Math.max(1, Number(e.target.value)))}
                       min="1"
                       className="w-32"
                     />
@@ -171,24 +208,24 @@ const ProductModal = ({ productName, onClose }: ProductModalProps) => {
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                               <span>Calories</span>
-                              <span>{calculateNutrition(productData.nutriments["energy-kcal"])} kcal</span>
+                              <span>{calculateNutrition(productData.nutriments["energy-kcal"]) || "0"} kcal</span>
                             </div>
                             <div className="flex justify-between text-sm">
                               <span>Proteins</span>
-                              <span>{calculateNutrition(productData.nutriments.proteins)} g</span>
+                              <span>{calculateNutrition(productData.nutriments.proteins) || "0"} g</span>
                             </div>
                             <div className="flex justify-between text-sm">
                               <span>Carbs</span>
-                              <span>{calculateNutrition(productData.nutriments.carbohydrates)} g</span>
+                              <span>{calculateNutrition(productData.nutriments.carbohydrates) || "0"} g</span>
                             </div>
                             <div className="flex justify-between text-sm">
                               <span>Fats</span>
-                              <span>{calculateNutrition(productData.nutriments.fat)} g</span>
+                              <span>{calculateNutrition(productData.nutriments.fat) || "0"} g</span>
                             </div>
                             <div className="flex justify-between text-sm">
                               <span className="font-bold">Carbohydrate Units</span>
                               <span className="font-semibold text-red-500">
-                                {(Number(calculateNutrition(productData.nutriments.carbohydrates)) / 10).toFixed(1)} KE
+                                {(Number(calculateNutrition(productData.nutriments.carbohydrates)) / 10).toFixed(1) || "0"} KE
                               </span>
                             </div>
                           </div>
@@ -202,49 +239,44 @@ const ProductModal = ({ productName, onClose }: ProductModalProps) => {
                         </CardHeader>
                         <CardContent>
                           <h3 className="font-semibold mb-2">Allergens:</h3>
-                          <p>{productData.allergens || "No allergen information available"}</p>
-
-                          <h3 className="font-semibold mt-4 mb-2">Dietary Information:</h3>
-                          <ul className="list-disc pl-5">
-                            <li>{productData.isVegan ? "Vegan" : "Not Vegan"}</li>
-                            <li>{productData.isGlutenFree ? "Gluten-Free" : "Contains Gluten"}</li>
-                          </ul>
+                          {productData?.allergens_tags && productData?.allergens_tags.length > 0 ? (
+                            <ul>
+                              {productData?.allergens_tags.map((allergen: string, index: number) => (
+                                <li key={index}>{allergen.replace('en:', '')}</li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <p>No allergen information available</p>
+                          )}
+                          <h3 className="font-semibold mt-4 mb-2">Dietary Tags:</h3>
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {renderTags(productData).map((tag, index) => (
+                              <Badge key={index} variant="secondary">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
                         </CardContent>
                       </Card>
                     </TabsContent>
                   </Tabs>
                 </div>
               </div>
-
-              <Card className="border-none">
-                <CardHeader>
-                  <CardTitle>Featured Recipes</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {featuredRecipes.map((recipe) => (
-                      <Card key={recipe.id} className="overflow-hidden">
-                        <CardHeader className="p-0">
-                          <Image
-                            src={recipe.image}
-                            alt={recipe.title}
-                            width={300}
-                            height={150}
-                            className="w-full object-cover"
-                          />
-                        </CardHeader>
-                        <CardContent className="p-4">
-                          <h4 className="font-semibold">{recipe.title}</h4>
-                          <Button variant="ghost" size="sm" className="mt-2">
-                            <Heart className="w-4 h-4 mr-2" />
-                            Save
-                          </Button>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <div>
+                <h3 className="text-xl font-semibold mb-4">Featured Recipes</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {featuredRecipes.map((recipe) => (
+                    <Card key={recipe.id}>
+                      <div className="aspect-video overflow-hidden">
+                        <img src={recipe.image} alt={recipe.title} className="w-full h-full object-cover" />
+                      </div>
+                      <CardContent>
+                        <h4 className="font-semibold">{recipe.title}</h4>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
             </div>
           )
         )}

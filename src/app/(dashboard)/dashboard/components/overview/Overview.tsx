@@ -16,6 +16,7 @@ import { Calendar } from "@/app/components/ui/calendar"
 import { motion } from 'framer-motion'
 import FoodIntakeTracker from '../../intakes/components/food-intake-tracker'
 import { cn } from '@/lib/utils'
+import { useBodyScrollLock } from '@/app/components/hooks/use-body-scroll-lock'
 
 const mockData = {
   "2024-10-01": { caloriesConsumed: 3200, carbsConsumed: 150, proteinsConsumed: 100, fatsConsumed: 70 },
@@ -34,10 +35,13 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
   const [currentDate, setCurrentDate] = useState<Date>(new Date())
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [recentIntakes, setRecentIntakes] = useState<Array<{ date: string; calories: number }>>([])
+  const [nutritionData, setNutritionData] = useState<any>(null)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isPopoverOpen, setIsPopoverOpen] = useState(false)
   const [selectedMeal, setSelectedMeal] = useState<'Breakfast' | 'Lunch' | 'Dinner' | null>(null)
+
+  useBodyScrollLock(isModalOpen)
 
   const openModal = (meal: 'Breakfast' | 'Lunch' | 'Dinner') => {
     setSelectedMeal(meal)
@@ -45,17 +49,34 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
     setIsPopoverOpen(false)
   }
 
+  const closeModal = () => {
+    setIsModalOpen(false)
+    setSelectedMeal(null)
+  }
+
   useEffect(() => {
-    const recent = Object.entries(mockData)
-      .map(([date, data]) => ({ date, calories: data.caloriesConsumed }))
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-      .slice(0, 5)
-    setRecentIntakes(recent)
-  }, [])
+    fetchNutritionData()
+  }, [currentDate])
 
   const changeDate = (days: number) => {
     setCurrentDate(prevDate => days > 0 ? addDays(prevDate, 1) : subDays(prevDate, 1))
   }
+
+  const fetchNutritionData = async () => {
+    try {
+      const response = await fetch(`/api/nutrition-data?date=${format(currentDate, 'yyyy-MM-dd')}`)
+      if (!response.ok) {
+        throw new Error('Failed to fetch nutrition data')
+      }
+      const data = await response.json()
+      setNutritionData(data)
+    } catch (error) {
+      console.error("Error fetching nutrition data:", error)
+    }
+  }
+
+  const totalCalories = nutritionData?.totalNutrition.calories || 0
+  const totalNutrition = nutritionData?.totalNutrition || { carbs: 0, proteins: 0, fats: 0 }
 
   const dateKey = format(currentDate, 'yyyy-MM-dd')
   const data = mockData[dateKey as keyof typeof mockData] || { caloriesConsumed: 0, carbsConsumed: 0, proteinsConsumed: 0, fatsConsumed: 0 }
@@ -66,83 +87,83 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
 
   return (
     <div className={cn("mt-24")}>
-<Card className="w-full mb-6">
-  <CardContent className="p-4 md:p-6">
-    <div className="flex flex-col md:flex-row items-center justify-between w-full">
-      <div className="flex items-center space-x-4 mb-4 md:mb-0"> 
-        <User className="h-12 w-12 text-muted-foreground" />
-        <div>
-          <motion.h2
-            className="text-lg md:text-2xl font-semibold text-foreground" 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            Welcome back,{' '}
-            {user?.name
-              ? user.name.split(' ')[0].charAt(0).toUpperCase() + user.name.split(' ')[0].slice(1)
-              : 'User'}
-          </motion.h2>
-          <p className="text-sm md:text-base text-muted-foreground"> 
-            Let's continue your nutrition journey today.
-          </p>
-        </div>
-      </div>
-      <div className='flex w-full sm:block sm:max-w-fit mt-4 sm:mt-0'>
-        <div>
-        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-        <PopoverTrigger asChild>
-          <Button variant="outline" className="font-bold p-4 md:p-6">
-            <Plus size={20} className="mr-2 text-foreground" />
-            Add intakes
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-80 ml-12 sm:m-0">
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <h4 className="font-medium leading-none">Nutrition</h4>
-              <p className="text-sm text-muted-foreground">
-                Select from below
-              </p>
+      <Card className="w-full mb-6">
+        <CardContent className="p-4 md:p-6">
+          <div className="flex flex-col md:flex-row items-center justify-between w-full">
+            <div className="flex items-center space-x-4 mb-4 md:mb-0">
+              <User className="h-12 w-12 text-muted-foreground" />
+              <div>
+                <motion.h2
+                  className="text-lg md:text-2xl font-semibold text-foreground"
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  Welcome back,{' '}
+                  {user?.name
+                    ? user.name.split(' ')[0].charAt(0).toUpperCase() + user.name.split(' ')[0].slice(1)
+                    : 'User'}
+                </motion.h2>
+                <p className="text-sm md:text-base text-muted-foreground">
+                  Let's continue your nutrition journey today.
+                </p>
+              </div>
             </div>
-            <div className="grid gap-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Coffee className="mr-2 h-4 w-4" />
-                  <span>Breakfast</span>
-                </div>
-                <Button size="sm" onClick={() => openModal('Breakfast')}>Add</Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Utensils className="mr-2 h-4 w-4" />
-                  <span>Lunch</span>
-                </div>
-                <Button size="sm" onClick={() => openModal('Lunch')}>Add</Button>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Moon className="mr-2 h-4 w-4" />
-                  <span>Dinner</span>
-                </div>
-                <Button size="sm" onClick={() => openModal('Dinner')}>Add</Button>
+            <div className='flex w-full sm:block sm:max-w-fit mt-4 sm:mt-0'>
+              <div>
+                <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="font-bold p-4 md:p-6">
+                      <Plus size={20} className="mr-2 text-foreground" />
+                      Add intakes
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 ml-12 sm:m-0">
+                    <div className="grid gap-4">
+                      <div className="space-y-2">
+                        <h4 className="font-medium leading-none">Nutrition</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Select from below
+                        </p>
+                      </div>
+                      <div className="grid gap-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <Coffee className="mr-2 h-4 w-4" />
+                            <span>Breakfast</span>
+                          </div>
+                          <Button size="sm" onClick={() => openModal('Breakfast')}>Add</Button>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <Utensils className="mr-2 h-4 w-4" />
+                            <span>Lunch</span>
+                          </div>
+                          <Button size="sm" onClick={() => openModal('Lunch')}>Add</Button>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center">
+                            <Moon className="mr-2 h-4 w-4" />
+                            <span>Dinner</span>
+                          </div>
+                          <Button size="sm" onClick={() => openModal('Dinner')}>Add</Button>
+                        </div>
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+
+                {isModalOpen && selectedMeal && (
+                  <FoodIntakeTracker
+                    mealType={selectedMeal}
+                    onClose={closeModal}
+                  />
+                )}
               </div>
             </div>
           </div>
-        </PopoverContent>
-      </Popover>
-
-      {isModalOpen && selectedMeal && (
-        <FoodIntakeTracker
-          mealType={selectedMeal}
-          onClose={() => setIsModalOpen(false)}
-        />
-      )}
-    </div>
-      </div>
-    </div>
-  </CardContent>
-</Card>
+        </CardContent>
+      </Card>
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-4 sm:mb-0">Nutrition Dashboard</h1>
         <div className="flex items-center space-x-2">
@@ -167,7 +188,7 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
                 <div className="text-sm text-gray-500">Target</div>
               </div>
               <CalorieGauge
-                consumed={data.caloriesConsumed}
+                consumed={totalCalories}
                 target={plan?.dailyCalories ?? 0}
                 gaugeColor={gaugeColor}
                 remainingCalories={remainingCalories}
@@ -184,9 +205,9 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
             <CardTitle>Macro Breakdown</CardTitle>
           </CardHeader>
           <CardContent>
-            <MacroProgress label="Carbs" consumed={data.carbsConsumed} total={plan?.dailyCarbs ?? 0} color="bg-blue-500" />
-            <MacroProgress label="Protein" consumed={data.proteinsConsumed} total={plan?.dailyProteins ?? 0} color="bg-red-500" />
-            <MacroProgress label="Fat" consumed={data.fatsConsumed} total={plan?.dailyFats ?? 0} color="bg-yellow-500" />
+            <MacroProgress label="Carbs" consumed={totalNutrition.carbs} total={plan?.dailyCarbs ?? 0} color="bg-blue-500" />
+            <MacroProgress label="Protein" consumed={totalNutrition.proteins} total={plan?.dailyProteins ?? 0} color="bg-red-500" />
+            <MacroProgress label="Fat" consumed={totalNutrition.fats} total={plan?.dailyFats ?? 0} color="bg-yellow-500" />
           </CardContent>
         </Card>
         <Card>
@@ -231,7 +252,7 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
               ))}
             </div>
           </CardContent>
-          <CardFooter>                
+          <CardFooter>
           </CardFooter>
         </Card>
       </div>
