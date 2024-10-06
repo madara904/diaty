@@ -133,8 +133,8 @@ const DiatySearch = () => {
     <div className="flex justify-end">
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <MoreHorizontal className="h-4 w-4" />
+        <Button variant="outline" size="icon" className="h-8 w-8">
+          <MoreHorizontal className="h-6 w-6" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -200,10 +200,10 @@ const DiatySearch = () => {
   }
 
   return (
-    <div className="px-4 mt-24 mb-6">
-      <div className="p-8 rounded-lg hover:shadow-sm mb-12 text-foreground">
+    <div className="px-4 mt-24 mb-6 bg-background text-foreground">
+      <div className="p-8 rounded-lg hover:shadow-sm mb-12">
         <h1 className="text-4xl font-bold mb-4 text-center">Discover Healthy Foods</h1>
-        <p className="text-foreground/70 text-center mb-8">Search, explore, and learn about nutritious options for your diet</p>
+        <p className="text-muted-foreground text-center mb-8">Search, explore, and learn about nutritious options for your diet</p>
         <form onSubmit={handleSearch} className="max-w-2xl mx-auto">
           <div className="flex sm:space-x-2 flex-col space-y-5 sm:flex-row sm:space-y-0">
             <div className="relative sm:flex-grow">
@@ -211,12 +211,12 @@ const DiatySearch = () => {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 py-2 w-full bg-background text-foreground"
+                className="pl-10 py-2 w-full"
                 placeholder="Search for a food item"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
             </div>
-            <Button type="submit" className="bg-primary hover:bg-primary/70 w-full sm:w-min">
+            <Button type="submit" className="bg-primary hover:bg-primary/90 text-primary-foreground w-full sm:w-min">
               Search
             </Button>
           </div>
@@ -224,7 +224,7 @@ const DiatySearch = () => {
       </div>
 
       {products.length > 0 && (
-        <ScrollArea className="">
+        <ScrollArea className="bg-secondary rounded-lg p-2 mb-8">
           <div className="flex justify-center space-x-2 p-2">
             {filterOptions.map((filter) => (
               <TooltipProvider key={filter.id}>
@@ -311,16 +311,16 @@ const DiatySearch = () => {
                         />
                       </div>
                     </CardHeader>
-                    <CardContent className="p-4">
+                    <CardContent className="p-4 bg-muted">
                       <div className="flex items-center justify-between mb-2">
                         <CardTitle className="text-lg font-bold truncate mr-2">{product.product_name}</CardTitle>
                         {renderProductActions(product)}
                       </div>
-                      <p className="text-sm text-muted-foreground">{product.brands}</p>
+                      <p className="text-sm text-muted-foreground min-h-5">{product.brands}</p>
                     </CardContent>
-                    <CardFooter className="p-4 pt-0 flex flex-wrap gap-1">
+                    <CardFooter className="p-4 pt-0 flex flex-wrap gap-1 bg-muted">
                       {renderTags(product).map((tag, index) => (
-                        <Badge key={index} variant="secondary" className="text-xs">
+                        <Badge key={index} variant="default" className="text-xs">
                           {tag}
                         </Badge>
                       ))}

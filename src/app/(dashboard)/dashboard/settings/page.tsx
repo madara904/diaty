@@ -5,6 +5,7 @@ import fetchPlan from "@/lib/fetch-user-plan";
 import Settings from "./settings";
 import fetchAvailablePlans from "@/lib/available-plans";
 import { redirect } from "next/navigation";
+import React from "react";
 
 const SettingsHome = async () => {
 
@@ -20,8 +21,9 @@ const SettingsHome = async () => {
 
   return (
     <>
-      <h1 className="mt-24 text-4xl font-medium">Settings</h1>
+      <div className="mt-24">
       <Settings user={user} plan={plan} availablePlans={availablePlans} />
+      </div>
     </>
   );
 };

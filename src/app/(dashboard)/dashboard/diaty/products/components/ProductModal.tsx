@@ -117,7 +117,7 @@ const ProductModal = ({ productName, onClose }: ProductModalProps) => {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 50 }}
         transition={{ duration: 0.3 }}
-        className="fixed inset-0 bg-white dark:bg-gray-900 z-50 overflow-y-auto"
+        className="fixed inset-0 bg-background z-50 overflow-y-auto"
       >
         <div className="max-w-4xl sm:max-w-7xl mx-auto px-4 py-8">
           <Button variant="ghost" onClick={onClose} className="mb-8">
@@ -140,7 +140,7 @@ const ProductModal = ({ productName, onClose }: ProductModalProps) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 50 }}
       transition={{ duration: 0.3 }}
-      className="fixed inset-0 bg-white dark:bg-gray-900 z-50 overflow-y-auto"
+      className="fixed inset-0 bg-background z-50 overflow-y-auto"
     >
       <div className="max-w-4xl sm:max-w-7xl mx-auto px-4 py-8">
         <Button variant="ghost" onClick={onClose} className="mb-8">
@@ -177,7 +177,7 @@ const ProductModal = ({ productName, onClose }: ProductModalProps) => {
                   <div className="flex flex-wrap gap-2 mb-4">
                   </div>
                   <div className="mb-6">
-                    <label htmlFor="grams" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label htmlFor="grams" className="block text-sm font-medium text-muted-foreground mb-2">
                       Serving size (grams):
                     </label>
                     <Input
@@ -219,7 +219,7 @@ const ProductModal = ({ productName, onClose }: ProductModalProps) => {
                             </div>
                             <div className="flex justify-between text-sm">
                               <span className="font-bold">Carbohydrate Units</span>
-                              <span className="font-semibold text-red-500">
+                              <span className="font-semibold text-destructive">
                                 {(Number(calculateNutrition(productData.nutriments.carbohydrates)) / 10).toFixed(1) || "0"} KE
                               </span>
                             </div>

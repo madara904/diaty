@@ -104,7 +104,7 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
   const totalCalories = nutritionData?.totalNutrition.calories || 0
   const totalNutrition = nutritionData?.totalNutrition || { carbs: 0, proteins: 0, fats: 0 }
 
-  const gaugeColor = totalCalories > (plan?.dailyCalories ?? 0) ? 'text-red-500' : 'text-green-500'
+  const gaugeColor = totalCalories > (plan?.dailyCalories ?? 0) ? 'text-destructive' : 'text-primary'
   const remainingCalories = (plan?.dailyCalories ?? 0) - totalCalories
 
   const macroSplit: Record<MealType, { calories: number, target: number }> = {
@@ -141,7 +141,7 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
   ]
 
   return (
-    <div className={cn("mt-24")}>
+    <div className={cn("mt-24 bg-background text-foreground")}>
       <Card className="w-full mb-6">
         <CardContent className="p-4 md:p-6">
           <div className="flex flex-col md:flex-row items-center justify-between w-full">
@@ -149,7 +149,7 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
               <User className="h-12 w-12 text-muted-foreground" />
               <div>
                 <motion.h2
-                  className="text-lg md:text-2xl font-semibold text-foreground"
+                  className="text-lg md:text-2xl font-semibold"
                   initial={{ opacity: 0, y: -20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
@@ -191,7 +191,7 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
                 <div className="flex items-center justify-center space-x-6">
                   <div className="text-center">
                     <div className="sm:text-2xl font-bold">{plan?.dailyCalories ?? 0}</div>
-                    <div className="text-sm text-gray-500">Target</div>
+                    <div className="text-sm text-muted-foreground">Target</div>
                   </div>
                   <CalorieGauge
                     consumed={totalCalories}
@@ -201,7 +201,7 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
                   />
                   <div className="text-center">
                     <div className="sm:text-2xl font-bold">{totalCalories}</div>
-                    <div className="text-sm text-gray-500">Consumed</div>
+                    <div className="text-sm text-muted-foreground">Consumed</div>
                   </div>
                 </div>
               </TabsContent>
@@ -222,7 +222,7 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
           <CardContent>
             <div className="space-y-4">
               {mealTypes.map(({ type, icon: Icon }) => (
-                <div key={type} className="flex justify-between items-center p-2 bg-gray-100 rounded">
+                <div key={type} className="flex justify-between items-center p-2 bg-secondary rounded">
                   <div className="flex flex-col">
                     <div className="flex items-center space-x-2">
                       <Icon className="h-5 w-5" />
@@ -279,9 +279,9 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
                   <CarouselItem key={index}>
                     <Card className={`${tip.bgColor} border-none shadow-none`}>
                       <CardContent className="flex flex-col items-center p-6">
-                        <tip.icon className="h-12 w-12 text-primary mb-4" />
-                        <h3 className="text-lg font-semibold mb-2">{tip.title}</h3>
-                        <p className="text-sm text-center">{tip.description}</p>
+                        <tip.icon className="h-12 w-12 text-muted-foreground mb-4" />
+                        <h3 className="text-lg font-semibold mb-2 text-muted-foreground">{tip.title}</h3>
+                        <p className="text-sm text-center text-muted-foreground">{tip.description}</p>
                       </CardContent>
                     </Card>
                   </CarouselItem>
@@ -320,7 +320,7 @@ function MacroProgress({ label, consumed, total }: MacroProgressProps) {
         <span>{label}</span>
         <span>{consumed}g / {total}g</span>
       </div>
-      <Progress value={percentage} className="h-2 bg-accent" />
+      <Progress value={percentage} className="h-2 bg-secondary" />
     </div>
   )
 }
@@ -342,8 +342,9 @@ function CalorieGauge({ consumed, target, gaugeColor, remainingCalories }: Calor
           cy="50"
           r="45"
           fill="none"
-          stroke="#e2e8f0"
+          stroke="currentColor"
           strokeWidth="6"
+          className="text-muted"
         />
         <circle
           cx="50"
@@ -361,7 +362,7 @@ function CalorieGauge({ consumed, target, gaugeColor, remainingCalories }: Calor
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
         <div className="text-2xl sm:text-3xl md:text-4xl font-bold">{Math.abs(remainingCalories)}</div>
-        <div className="text-sm sm:text-base text-gray-500">
+        <div className="text-sm sm:text-base text-muted-foreground">
           {remainingCalories >= 0 ? 'remaining' : 'over'}
         </div>
       </div>

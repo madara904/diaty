@@ -9,6 +9,7 @@ import LayoutWrapper from "./components/overview/LayoutWrapper";
 import { SideBarProvider } from "@/lib/context/SideBarContext";
 import LoadingBar from "./components/ui/LoadingBar";
 import { LoadingProvider } from "./components/ui/LoadingProvider";
+import { ThemeProvider } from "@/app/components/theme-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,6 +30,12 @@ export default function RootLayout({
           inter.className
         )}
       >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
         <SessionProvider>
           <SideBarProvider>
             <LoadingProvider>
@@ -41,6 +48,7 @@ export default function RootLayout({
             </LoadingProvider>
           </SideBarProvider>
         </SessionProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

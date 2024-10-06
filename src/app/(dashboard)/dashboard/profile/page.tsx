@@ -17,7 +17,6 @@ export default async function Profile () {
   return (
     <>
     <div className='mt-24 font-medium justify-center min-h-screen'>
-      <h1 className='text-4xl'>Profile</h1>
       <ProfileSection user={user}/>
     </div>
 

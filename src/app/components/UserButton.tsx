@@ -1,5 +1,5 @@
 import avatarPlaceholder from "@/assets/images/avatar.jpg";
-import { Lock, LogOut, Settings } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { User } from "next-auth";
 import { signOut } from "next-auth/react";
 import Image from "next/image";
@@ -20,18 +20,16 @@ interface UserButtonProps {
 }
 
 export default function UserButton({ user }: UserButtonProps) {
-
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button size="icon" className="flex-none rounded-full bg-transparent hover:bg-gray-200">
+        <Button variant="ghost" size="icon" className=" bg-transparent hover:bg-secondary w-8 h-8 p-0">
           <Image
             src={user.image || avatarPlaceholder}
             alt="User profile picture"
-            width={35}
-            height={35}
-            className="aspect-square rounded-full bg-background object-cover"
+            width={45}
+            height={45}
+            className="rounded-full bg-background object-cover"
           />
         </Button>
       </DropdownMenuTrigger>
