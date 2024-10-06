@@ -2,33 +2,28 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 
-
-
 export async function POST(req: NextRequest) {
-
   const session = await auth();
   const user = session?.user;
 
   try {
-
     if (!user || !user.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-
     const body = await req.json();
-    const { calories, carbs, proteins, fats } = body;
-
+    const { calories, carbs, proteins, fats, mealType, date } = body;
 
     const newNutritionData = await prisma.nutritionData.create({
       data: {
         userId: user.id,
-        date: new Date(),
+        date: new Date(date),
         calories,
         carbs,
         proteins,
         fats,
         carbUnits: carbs / 10,
+        mealType,
       },
     });
 

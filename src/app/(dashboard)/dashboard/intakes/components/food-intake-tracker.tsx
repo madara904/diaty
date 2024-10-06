@@ -24,6 +24,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card"
+import { useToast } from "@/app/components/hooks/use-toast"
+import { format } from 'date-fns'
 
 const recentItems = [
   { id: 1, name: "Apple", brand: "Nature's Best", calories: 95 },
@@ -48,12 +50,15 @@ type ManualEntryForm = z.infer<typeof manualEntrySchema>
 type FoodIntakeTrackerProps = {
   mealType: 'Breakfast' | 'Lunch' | 'Dinner';
   onClose: () => void;
+  onSave: () => void;
+  selectedDate: Date;
 }
 
-export default function FoodIntakeTracker({ mealType, onClose }: FoodIntakeTrackerProps) {
+export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedDate }: FoodIntakeTrackerProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<any[]>([])
-  
+
+  const { toast } = useToast()
 
   const form = useForm<ManualEntryForm>({
     resolver: zodResolver(manualEntrySchema),
@@ -76,17 +81,31 @@ export default function FoodIntakeTracker({ mealType, onClose }: FoodIntakeTrack
         body: JSON.stringify({
           ...data,
           mealType,
+          date: format(selectedDate, 'yyyy-MM-dd'),
         }),
       });
   
       if (response.ok) {
-        console.log("Data saved successfully");
+        toast({
+          title: "Success",
+          description: "Nutrition data saved successfully",
+        })
+        onSave();
         onClose();
       } else {
-        console.error("Error saving data");
+        toast({
+          title: "Error",
+          description: "Failed to save nutrition data",
+          variant: "destructive",
+        })
       }
     } catch (error) {
       console.error("Error submitting form:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      })
     }
   };
 
@@ -122,7 +141,10 @@ export default function FoodIntakeTracker({ mealType, onClose }: FoodIntakeTrack
     <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center">
       <div className="bg-background shadow-lg rounded-lg p-6 w-full max-w-3xl max-h-full overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Add {mealType} Intake</h2>
+          <div>
+            <h2 className="text-2xl font-bold">Add {mealType} Intake</h2>
+            <p className="text-sm text-muted-foreground">Date: {format(selectedDate, 'MMMM d, yyyy')}</p>
+          </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-6 w-6" />
           </Button>

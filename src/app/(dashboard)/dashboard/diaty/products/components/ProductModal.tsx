@@ -175,11 +175,6 @@ const ProductModal = ({ productName, onClose }: ProductModalProps) => {
                 <div className="md:w-2/3">
                   <h2 className="text-3xl font-bold mb-4">{productData.product_name}</h2>
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {renderTags(productData).map((tag, index) => (
-                      <Badge key={index} variant="secondary">
-                        {tag}
-                      </Badge>
-                    ))}
                   </div>
                   <div className="mb-6">
                     <label htmlFor="grams" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
