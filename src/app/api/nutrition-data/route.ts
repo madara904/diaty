@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
+import { MealType } from "@prisma/client";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -14,21 +15,26 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { calories, carbs, proteins, fats, mealType, date } = body;
 
+
+    const mealTypeEnum = mealType.toUpperCase() as MealType;
+
     const newNutritionData = await prisma.nutritionData.create({
       data: {
         userId: user.id,
         date: new Date(date),
-        calories,
-        carbs,
-        proteins,
-        fats,
-        carbUnits: carbs / 10,
-        mealType,
+        calories: Number(calories),
+        carbs: Number(carbs),
+        proteins: Number(proteins),
+        fats: Number(fats),
+        carbUnits: Number(carbs) / 10,
+        mealType: mealTypeEnum,
       },
     });
 
+
     return NextResponse.json(newNutritionData, { status: 200 });
   } catch (error) {
+    console.error("Error saving nutrition data:", error);
     return NextResponse.json({ error: "Failed to save nutrition data" }, { status: 500 });
   }
 }

@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/pop
 import { Calendar } from "@/app/components/ui/calendar"
 import { motion } from 'framer-motion'
 import FoodIntakeTracker from '../../intakes/components/food-intake-tracker'
-import { cn } from '@/lib/utils'
+import { capitalizeFirstLetter, cn } from '@/lib/utils'
 import { useBodyScrollLock } from '@/app/components/hooks/use-body-scroll-lock'
 import { Toaster } from "@/app/components/ui/toaster"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
@@ -26,19 +26,19 @@ interface NutritionData {
     fats: number;
   };
   meals: {
-    Breakfast: {
+    BREAKFAST: {
       calories: number;
       carbs: number;
       proteins: number;
       fats: number;
     };
-    Lunch: {
+    LUNCH: {
       calories: number;
       carbs: number;
       proteins: number;
       fats: number;
     };
-    Dinner: {
+    DINNER: {
       calories: number;
       carbs: number;
       proteins: number;
@@ -47,12 +47,12 @@ interface NutritionData {
   };
 }
 
-type MealType = 'Breakfast' | 'Lunch' | 'Dinner';
+type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER';
 
 const mealTypes: { type: MealType, icon: LucideIcon }[] = [
-  { type: 'Breakfast', icon: Coffee },
-  { type: 'Lunch', icon: Utensils },
-  { type: 'Dinner', icon: Moon },
+  { type: 'BREAKFAST', icon: Coffee },
+  { type: 'LUNCH', icon: Utensils },
+  { type: 'DINNER', icon: Moon },
 ];
 
 interface OverviewProps {
@@ -66,11 +66,11 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
   const [nutritionData, setNutritionData] = useState<NutritionData | null>(null)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedMeal, setSelectedMeal] = useState<'Breakfast' | 'Lunch' | 'Dinner' | null>(null)
+  const [selectedMeal, setSelectedMeal] = useState<'BREAKFAST' | 'LUNCH' | 'DINNER' | null>(null)
 
   useBodyScrollLock(isModalOpen)
 
-  const openModal = (meal: 'Breakfast' | 'Lunch' | 'Dinner') => {
+  const openModal = (meal: MealType) => {
     setSelectedMeal(meal)
     setIsModalOpen(true)
   }
@@ -108,9 +108,9 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
   const remainingCalories = (plan?.dailyCalories ?? 0) - totalCalories
 
   const macroSplit: Record<MealType, { calories: number, target: number }> = {
-    Breakfast: { calories: 500, target: 600 },
-    Lunch: { calories: 700, target: 800 },
-    Dinner: { calories: 600, target: 700 },
+    BREAKFAST: { calories: 500, target: 600 },
+    LUNCH: { calories: 700, target: 800 },
+    DINNER: { calories: 600, target: 700 },
   };
 
   const nutritionTips = [
@@ -226,13 +226,13 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
                   <div className="flex flex-col">
                     <div className="flex items-center space-x-2">
                       <Icon className="h-5 w-5" />
-                      <span>{type}</span>
+                      <span>{capitalizeFirstLetter(type)}</span>
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
                       {macroSplit[type].calories}/{macroSplit[type].target} calories
                     </div>
                   </div>
-                  <Button size="sm" onClick={() => openModal(type as 'Breakfast' | 'Lunch' | 'Dinner')}>
+                  <Button size="sm" onClick={() => openModal(type)}>
                     <Plus className="h-4 w-4" />
                   </Button>
                 </div>

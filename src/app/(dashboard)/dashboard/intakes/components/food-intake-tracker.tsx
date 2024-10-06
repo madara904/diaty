@@ -38,17 +38,16 @@ const favoriteItems = [
 ]
 
 const manualEntrySchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  calories: z.number().min(1, "Calories must be a positive number"),
-  carbs: z.number().min(1, "Carbs must be a positive number"),
-  proteins: z.number().min(1, "Proteins must be a positive number"),
-  fats: z.number().min(1, "Fat must be a positive number"),
+  calories: z.coerce.number().min(0, "Calories must be a non-negative number"),
+  carbs: z.coerce.number().min(0, "Carbs must be a non-negative number"),
+  proteins: z.coerce.number().min(0, "Proteins must be a non-negative number"),
+  fats: z.coerce.number().min(0, "Fat must be a non-negative number"),
 })
 
 type ManualEntryForm = z.infer<typeof manualEntrySchema>
 
 type FoodIntakeTrackerProps = {
-  mealType: 'Breakfast' | 'Lunch' | 'Dinner';
+  mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER';
   onClose: () => void;
   onSave: () => void;
   selectedDate: Date;
@@ -63,7 +62,6 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
   const form = useForm<ManualEntryForm>({
     resolver: zodResolver(manualEntrySchema),
     defaultValues: {
-      name: "",
       calories: 0,
       carbs: 0,
       proteins: 0,
@@ -80,12 +78,14 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
         },
         body: JSON.stringify({
           ...data,
-          mealType,
+          mealType: mealType.toLocaleUpperCase(),
           date: format(selectedDate, 'yyyy-MM-dd'),
         }),
       });
   
       if (response.ok) {
+        const result = await response.json();
+        console.log("API Response:", result);
         toast({
           title: "Success",
           description: "Nutrition data saved successfully",
@@ -93,9 +93,11 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
         onSave();
         onClose();
       } else {
+        const errorData = await response.json();
+        console.error("API Error:", errorData);
         toast({
           title: "Error",
-          description: "Failed to save nutrition data",
+          description: errorData.error || "Failed to save nutrition data",
           variant: "destructive",
         })
       }
@@ -142,8 +144,8 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
       <div className="bg-background shadow-lg rounded-lg p-6 w-full max-w-3xl max-h-full overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-bold">Add {mealType} Intake</h2>
-            <p className="text-sm text-muted-foreground">Date: {format(selectedDate, 'MMMM d, yyyy')}</p>
+            <h2 className="text-2xl font-bold">Add {mealType.toLowerCase()} Intake</h2>
+            <p className="text-sm text-muted-foreground">{format(selectedDate, 'MMMM d, yyyy')}</p>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="h-6 w-6" />
@@ -186,7 +188,7 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
           <TabsContent value="manual">
             <Card>
               <CardHeader>
-                <CardTitle>Manual Entry for {mealType}</CardTitle>
+                <CardTitle>Manual Entry for {mealType.toLowerCase()}</CardTitle>
                 <CardDescription>Enter nutritional information manually</CardDescription>
               </CardHeader>
               <CardContent>
@@ -194,25 +196,12 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                     <FormField
                       control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Food Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
                       name="calories"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Calories</FormLabel>
                           <FormControl>
-                            <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} />
+                            <Input type="number" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -225,7 +214,7 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
                         <FormItem>
                           <FormLabel>Carbs (g)</FormLabel>
                           <FormControl>
-                            <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} />
+                            <Input type="number" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -238,7 +227,7 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
                         <FormItem>
                           <FormLabel>Proteins (g)</FormLabel>
                           <FormControl>
-                            <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} />
+                            <Input type="number" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -251,13 +240,13 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
                         <FormItem>
                           <FormLabel>Fat (g)</FormLabel>
                           <FormControl>
-                            <Input type="number" {...field} onChange={e => field.onChange(parseFloat(e.target.value))} />
+                            <Input type="number" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <Button type="submit">Add to {mealType} Intake</Button>
+                    <Button type="submit">Add to {mealType.toLowerCase()} Intake</Button>
                   </form>
                 </Form>
               </CardContent>
