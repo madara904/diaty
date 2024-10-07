@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Home, User, Settings, BookCheck, Menu, X, ArrowLeftToLine, ArrowRightToLine, PlusIcon, Plus } from "lucide-react"
+import { Home, User, Settings, BookCheck, Menu, X, ArrowLeftToLine, ArrowRightToLine } from "lucide-react"
 import { Button } from "@/app/components/ui/Button"
 import Link from "next/link"
 import React from "react"
@@ -20,7 +20,6 @@ interface SidebarItem {
 interface SidebarProps {
   isCollapsed: boolean
   setIsCollapsed: (value: boolean) => void
-  toggleCollapse: () => void
 }
 
 export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
@@ -78,9 +77,9 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
               variant="ghost"
             >
               {isCollapsed ? (
-                <ArrowRightToLine className="transition-all" />
+                <ArrowRightToLine className="w-6 h-6" />
               ) : (
-                <ArrowLeftToLine className="transition-all" />
+                <ArrowLeftToLine className="w-6 h-6" />
               )}
             </Button>
           )}
@@ -98,14 +97,18 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                         handleItemClick(item.link)
                       }}
                       className={cn(
-                        "flex items-center justify-start space-x-3 cursor-pointer p-2 rounded-md transition-all duration-200 w-full",
+                        "flex items-center justify-start w-full p-2 rounded-md transition-all duration-200",
                         isActive(item.link) ? "bg-primary text-black" : "hover:bg-gray-700 hover:text-white"
                       )}
                     >
-                      <div className="p-1 border-2 border-transparent rounded-full">
-                        {item.icon}
+                      <div className="flex items-center justify-center w-10 h-10 flex-shrink-0">
+                        {React.cloneElement(item.icon, { className: "w-6 h-6" })}
                       </div>
-                      {!isCollapsed && <span>{item.label}</span>}
+                      {!isCollapsed && (
+                        <span className="ml-3 whitespace-nowrap overflow-hidden transition-all duration-200" style={{ width: isCollapsed ? '0' : 'auto', opacity: isCollapsed ? 0 : 1 }}>
+                          {item.label}
+                        </span>
+                      )}
                     </Link>
                   </TooltipTrigger>
                   {isCollapsed && (
