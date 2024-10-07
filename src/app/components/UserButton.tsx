@@ -21,7 +21,7 @@ interface UserButtonProps {
 
 export default function UserButton({ user }: UserButtonProps) {
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className=" bg-transparent hover:bg-secondary w-8 h-8 p-0">
           <Image

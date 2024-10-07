@@ -182,11 +182,12 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
             <CardTitle>Nutrition Overview</CardTitle>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="calories">
+            <Tabs defaultValue="calories" className="h-[300px]">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="calories">Calories</TabsTrigger>
                 <TabsTrigger value="macros">Macros</TabsTrigger>
               </TabsList>
+              <div className="pt-8">
               <TabsContent value="calories">
                 <div className="flex items-center justify-center space-x-6">
                   <div className="text-center">
@@ -206,12 +207,13 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
                 </div>
               </TabsContent>
               <TabsContent value="macros">
-                <div className="space-y-4 max-w-xl mx-auto">
+                <div className="space-y-4 max-w-xl mx-auto pt-10">
                   <MacroProgress label="Carbs" consumed={totalNutrition.carbs} total={plan?.dailyCarbs ?? 0} />
                   <MacroProgress label="Protein" consumed={totalNutrition.proteins} total={plan?.dailyProteins ?? 0} />
                   <MacroProgress label="Fat" consumed={totalNutrition.fats} total={plan?.dailyFats ?? 0} />
                 </div>
               </TabsContent>
+              </div>
             </Tabs>
           </CardContent>
         </Card>
@@ -270,10 +272,11 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
         </Card>
         <Card className="md:col-span-2">
           <CardHeader>
-            <CardTitle>Nutrition Tips</CardTitle>
+            <CardTitle>Did you know?</CardTitle>
           </CardHeader>
           <CardContent>
-            <Carousel className="w-full">
+            <div className='w-full flex justify-center'>
+            <Carousel className="w-5/6">
               <CarouselContent>
                 {nutritionTips.map((tip, index) => (
                   <CarouselItem key={index}>
@@ -290,6 +293,7 @@ export default function EnhancedNutritionDashboard({ user, plan }: OverviewProps
               <CarouselPrevious />
               <CarouselNext />
             </Carousel>
+            </div>
           </CardContent>
         </Card>
       </div>
