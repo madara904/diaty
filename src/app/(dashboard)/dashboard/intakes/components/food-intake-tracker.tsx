@@ -20,7 +20,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/app/components/ui/card"
@@ -61,12 +60,6 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
 
   const form = useForm<ManualEntryForm>({
     resolver: zodResolver(manualEntrySchema),
-    defaultValues: {
-      calories: 0,
-      carbs: 0,
-      proteins: 0,
-      fats: 0,
-    },
   })
 
   const onSubmit = async (data: ManualEntryForm) => {
@@ -89,6 +82,7 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
         toast({
           title: "Success",
           description: "Nutrition data saved successfully",
+          duration: 100,
         })
         onSave();
         onClose();

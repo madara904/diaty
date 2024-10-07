@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/auth";
 import { MealType } from "@prisma/client";
+import { fetchNutritionData } from "@/lib/fetch-nutrition.data";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -14,7 +15,6 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const { calories, carbs, proteins, fats, mealType, date } = body;
-
 
     const mealTypeEnum = mealType.toUpperCase() as MealType;
 
@@ -30,7 +30,6 @@ export async function POST(req: NextRequest) {
         mealType: mealTypeEnum,
       },
     });
-
 
     return NextResponse.json(newNutritionData, { status: 200 });
   } catch (error) {
@@ -60,46 +59,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const nutritionData = await prisma.nutritionData.findMany({
-      where: {
-        userId: session.user.id,
-        date: {
-          gte: new Date(date.setHours(0, 0, 0, 0)),
-          lt: new Date(date.setHours(23, 59, 59, 999)),
-        },
-      },
-      select: {
-        calories: true,
-        carbs: true,
-        proteins: true,
-        fats: true,
-        mealType: true,
-      },
-    });
-
-    const totalNutrition = nutritionData.reduce(
-      (acc, entry) => ({
-        calories: acc.calories + entry.calories,
-        carbs: acc.carbs + entry.carbs,
-        proteins: acc.proteins + entry.proteins,
-        fats: acc.fats + entry.fats,
-      }),
-      { calories: 0, carbs: 0, proteins: 0, fats: 0 }
-    );
-
-    const response = {
-      date: dateParam,
-      totalNutrition,
-      meals: nutritionData.reduce((acc, entry) => {
-        if (!acc[entry.mealType]) {
-          acc[entry.mealType] = [];
-        }
-        acc[entry.mealType].push(entry);
-        return acc;
-      }, {} as Record<string, typeof nutritionData>),
-    };
-
-    return NextResponse.json(response, { status: 200 });
+    const nutritionData = await fetchNutritionData(date);
+    return NextResponse.json(nutritionData, { status: 200 });
   } catch (error) {
     console.error("Error fetching nutrition data:", error);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });

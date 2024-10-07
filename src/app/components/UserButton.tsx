@@ -23,7 +23,7 @@ export default function UserButton({ user }: UserButtonProps) {
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className=" bg-transparent hover:bg-secondary w-8 h-8 p-0">
+        <Button variant="ghost" size="icon" className="rounded-full">
           <Image
             src={user.image || avatarPlaceholder}
             alt="User profile picture"
