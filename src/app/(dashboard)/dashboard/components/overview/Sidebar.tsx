@@ -20,6 +20,7 @@ interface SidebarItem {
 interface SidebarProps {
   isCollapsed: boolean
   setIsCollapsed: (value: boolean) => void
+  toggleCollapse: () => void
 }
 
 export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
