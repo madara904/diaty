@@ -127,7 +127,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
     <>
       <Button
         onClick={toggleMobileMenu}
-        className="fixed top-3 left-2 z-50 md:hidden focus:outline-none hover:bg-transparent"
+        className="fixed top-3 left-3 z-50 md:hidden focus:outline-none hover:bg-transparent"
         variant="ghost"
       >
         {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
