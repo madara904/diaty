@@ -131,7 +131,7 @@ const DiatySearch = () => {
 
   const renderProductActions = (product: any) => (
     <div className="flex justify-end">
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="icon" className="h-8 w-8">
           <MoreHorizontal className="h-6 w-6" />
@@ -255,7 +255,7 @@ const DiatySearch = () => {
             Showing {filteredProducts.length} results
           </p>
           <div className="flex items-center justify-center sm:justify-start space-x-4">
-            <Select onValueChange={setSortOption}>
+            <Select onValueChange={setSortOption} > 
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Sort by" />
               </SelectTrigger>

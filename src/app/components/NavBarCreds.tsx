@@ -31,7 +31,7 @@ export default function NavBarCreds({ user, session }: NavBarCredsProps) {
   }, []);
 
   return (
-    <div className={cn("fixed top-0 inset-x-0 bg-background w-full z-20 border-b h-16",{ "backdrop-blur bg-background/80": isScrolled })}>
+    <div className={cn("fixed top-0 inset-x-0 bg-background z-20 border-b h-16 w-screen overflow-x-hidden",{ "backdrop-blur bg-background/80": isScrolled })}>
     <div
       className={cn(
         "flex container justify-between h-full items-center pb-1",
