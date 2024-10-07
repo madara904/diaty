@@ -27,8 +27,8 @@ export default function UserButton({ user }: UserButtonProps) {
           <Image
             src={user.image || avatarPlaceholder}
             alt="User profile picture"
-            width={45}
-            height={45}
+            width={40}
+            height={40}
             className="rounded-full bg-background object-cover"
           />
         </Button>

@@ -1,25 +1,26 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useEffect, useState, useTransition } from 'react'
 import { format, addDays, subDays } from 'date-fns'
-import { ChevronLeft, ChevronRight, History, TrendingUp, Settings, Utensils, Calendar as CalendarIcon, ArrowRight, User, Plus, Coffee, Moon, LightbulbIcon, LucideIcon } from 'lucide-react'
+import { ChevronLeft, ChevronRight, History, TrendingUp, Settings, Utensils, Calendar as CalendarIcon, ArrowRight, User, Plus, Coffee, Moon, LightbulbIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
 import { Button } from "@/app/components/ui/Button"
-import { Session } from 'next-auth'
-import { Plan } from '@/types/plan'
 import { Progress } from "@/app/components/ui/progress"
 import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover"
 import { Calendar } from "@/app/components/ui/calendar"
 import { AnimatePresence, motion } from 'framer-motion'
-import FoodIntakeTracker from '../../intakes/components/food-intake-tracker'
-import { capitalizeFirstLetter, cn } from '@/lib/utils'
-import { useBodyScrollLock } from '@/app/components/hooks/use-body-scroll-lock'
-import { Toaster } from "@/app/components/ui/toaster"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/app/components/ui/carousel"
+import { Session } from 'next-auth'
+import { Plan } from '@/types/plan'
+import { capitalizeFirstLetter, cn } from '@/lib/utils'
+import { Toaster } from "@/app/components/ui/toaster"
+import { useBodyScrollLock } from '@/app/components/hooks/use-body-scroll-lock'
+import FoodIntakeTracker from '../../intakes/components/food-intake-tracker'
+import { fetchNutritionData } from '@/lib/fetch-nutrition.data'
 
 interface NutritionData {
-  date: string;
+  date: Date;
   totalNutrition: {
     calories: number;
     carbs: number;
@@ -39,7 +40,7 @@ interface NutritionData {
 
 type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER';
 
-const mealTypes: { type: MealType, icon: LucideIcon }[] = [
+const mealTypes: { type: MealType; icon: React.ElementType }[] = [
   { type: 'BREAKFAST', icon: Coffee },
   { type: 'LUNCH', icon: Utensils },
   { type: 'DINNER', icon: Moon },
@@ -51,17 +52,41 @@ interface OverviewProps {
   initialNutritionData: NutritionData
 }
 
-export default function EnhancedNutritionDashboard({ user, plan, initialNutritionData }: OverviewProps) {
+export default function Overview({ user, plan, initialNutritionData }: OverviewProps) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date())
-  const [popoverOpen, setPopoverOpen] = useState(false)
   const [nutritionData, setNutritionData] = useState<NutritionData>(initialNutritionData)
-
+  const [popoverOpen, setPopoverOpen] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedMeal, setSelectedMeal] = useState<MealType | null>(null)
-
   const [direction, setDirection] = useState(0)
 
   useBodyScrollLock(isModalOpen)
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data = await fetchNutritionData(currentDate)
+        setNutritionData(data)
+      } catch (error) {
+        console.error("Error fetching nutrition data:", error)
+      }
+    }
+  
+    fetchData()
+  }, [currentDate])
+
+  const changeDate = (days: number) => {
+    const newDate = days > 0 ? addDays(currentDate, 1) : subDays(currentDate, 1)
+    setCurrentDate(newDate)
+    setDirection(days)
+  }
+
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setCurrentDate(date)
+    }
+    setPopoverOpen(false)
+  }
 
   const openModal = (meal: MealType) => {
     setSelectedMeal(meal)
@@ -73,36 +98,13 @@ export default function EnhancedNutritionDashboard({ user, plan, initialNutritio
     setSelectedMeal(null)
   }
 
-  const fetchNutritionData = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/nutrition-data?date=${format(currentDate, 'yyyy-MM-dd')}`)
-      if (!response.ok) {
-        throw new Error('Failed to fetch nutrition data')
-      }
-      const data: NutritionData = await response.json()
-      setNutritionData(data)
-    } catch (error) {
-      console.error("Error fetching nutrition data:", error)
-    }
-  }, [currentDate])
-
-  useEffect(() => {
-    if (format(currentDate, 'yyyy-MM-dd') !== nutritionData.date) {
-      fetchNutritionData()
-    }
-  }, [fetchNutritionData, currentDate, nutritionData.date])
-
-  const changeDate = (days: number) => {
-    setCurrentDate(prevDate => days > 0 ? addDays(prevDate, 1) : subDays(prevDate, 1))
-  }
-
   const totalCalories = nutritionData.totalNutrition.calories
   const totalNutrition = nutritionData.totalNutrition
 
   const gaugeColor = totalCalories > (plan?.dailyCalories ?? 0) ? 'text-destructive' : 'text-primary'
   const remainingCalories = (plan?.dailyCalories ?? 0) - totalCalories
 
-  const macroSplit: Record<MealType, { calories: number, target: number }> = {
+  const macroSplit: Record<MealType, { calories: number; target: number }> = {
     BREAKFAST: { calories: 500, target: 600 },
     LUNCH: { calories: 700, target: 800 },
     DINNER: { calories: 600, target: 700 },
@@ -135,182 +137,185 @@ export default function EnhancedNutritionDashboard({ user, plan, initialNutritio
     },
   ]
 
-return (
-  <AnimatePresence mode="wait">
-  <motion.div
-    key={currentDate.toISOString()}
-    initial={{ opacity: 0, x: direction > 0 ? 300 : -300 }}
-    animate={{ opacity: 1, x: 0 }}
-    exit={{ opacity: 0, x: direction > 0 ? -300 : 300 }}
-    transition={{ type: "tween", stiffness: 700, damping: 30 }}
-    className={cn("mt-24 bg-background text-foreground")}
-  >
-    <Card className="w-full mb-6">
-      <CardContent className="p-4 md:p-6">
-        <div className="flex flex-col md:flex-row items-center justify-between w-full">
-          <div className="flex items-center space-x-4 mb-4 md:mb-0">
-            <User className="h-12 w-12 text-muted-foreground" />
-            <div>
-              <motion.h2
-                className="text-lg md:text-2xl font-semibold"
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                Welcome back,{' '}
-                {user?.name
-                  ? user.name.split(' ')[0].charAt(0).toUpperCase() + user.name.split(' ')[0].slice(1)
-                  : 'User'}
-              </motion.h2>
-              <p className="text-sm md:text-base text-muted-foreground">
-                Let's continue your nutrition journey today.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="outline" onClick={() => changeDate(-1)} aria-label="Previous day">
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <DatePicker currentDate={currentDate} setCurrentDate={setCurrentDate} popoverOpen={popoverOpen} setPopoverOpen={setPopoverOpen} />
-            <Button variant="outline" onClick={() => changeDate(1)} aria-label="Next day">
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <Card className="md:col-span-2">
-        <CardHeader>
-          <CardTitle>Nutrition Overview</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="calories" className="h-[300px]">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="calories">Calories</TabsTrigger>
-              <TabsTrigger value="macros">Macros</TabsTrigger>
-            </TabsList>
-            <div className="pt-8">
-            <TabsContent value="calories">
-              <div className="flex items-center justify-center space-x-6">
-                <div className="text-center">
-                  <div className="sm:text-2xl font-bold">{plan?.dailyCalories ?? 0}</div>
-                  <div className="text-sm text-muted-foreground">Target</div>
-                </div>
-                <CalorieGauge
-                  consumed={totalCalories}
-                  target={plan?.dailyCalories ?? 0}
-                  gaugeColor={gaugeColor}
-                  remainingCalories={remainingCalories}
-                />
-                <div className="text-center">
-                  <div className="sm:text-2xl font-bold">{totalCalories}</div>
-                  <div className="text-sm text-muted-foreground">Consumed</div>
+  return (
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={currentDate.toISOString()}
+        initial={{ opacity: 0, x: direction > 0 ? 300 : -300 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: direction > 0 ? -300 : 300 }}
+        transition={{ type: "tween", stiffness: 700, damping: 30 }}
+        className={cn("mt-24 bg-background text-foreground")}
+      >
+        <Card className="w-full mb-6">
+          <CardContent className="p-4 md:p-6">
+            <div className="flex flex-col md:flex-row items-center justify-between w-full">
+              <div className="flex items-center space-x-4 mb-4 md:mb-0">
+                <User className="h-12 w-12 text-muted-foreground" />
+                <div>
+                  <motion.h2
+                    className="text-lg md:text-2xl font-semibold"
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    Welcome back,{' '}
+                    {user?.name
+                      ? user.name.split(' ')[0].charAt(0).toUpperCase() + user.name.split(' ')[0].slice(1)
+                      : 'User'}
+                  </motion.h2>
+                  <p className="text-sm md:text-base text-muted-foreground">
+                    Let's continue your nutrition journey today.
+                  </p>
                 </div>
               </div>
-            </TabsContent>
-            <TabsContent value="macros">
-              <div className="space-y-4 max-w-xl mx-auto pt-10">
-                <MacroProgress label="Carbs" consumed={totalNutrition.carbs} total={plan?.dailyCarbs ?? 0} />
-                <MacroProgress label="Protein" consumed={totalNutrition.proteins} total={plan?.dailyProteins ?? 0} />
-                <MacroProgress label="Fat" consumed={totalNutrition.fats} total={plan?.dailyFats ?? 0} />
-              </div>
-            </TabsContent>
-            </div>
-          </Tabs>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Meal Tracker</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {mealTypes.map(({ type, icon: Icon }) => (
-              <div key={type} className="flex justify-between items-center p-2 bg-secondary rounded">
-                <div className="flex flex-col">
-                  <div className="flex items-center space-x-2">
-                    <Icon className="h-5 w-5" />
-                    <span>{capitalizeFirstLetter(type)}</span>
-                  </div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {macroSplit[type].calories}/{macroSplit[type].target} calories
-                  </div>
-                </div>
-                <Button size="sm" onClick={() => openModal(type)}>
-                  <Plus className="h-4 w-4" />
+              <div className="flex items-center space-x-2">
+                <Button variant="outline" onClick={() => changeDate(-1)} aria-label="Previous day">
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <DatePicker currentDate={currentDate} setCurrentDate={handleDateSelect} popoverOpen={popoverOpen} setPopoverOpen={setPopoverOpen} />
+                <Button variant="outline" onClick={() => changeDate(1)} aria-label="Next day">
+                  <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <Button variant="outline" className="w-full justify-between">
-            <span className="flex items-center">
-              <History className="mr-2 h-4 w-4" />
-              View History
-            </span>
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" className="w-full justify-between">
-            <span className="flex items-center">
-              <TrendingUp className="mr-2 h-4 w-4" />
-              Progress Report
-            </span>
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-          <Button variant="outline" className="w-full justify-between">
-            <span className="flex items-center">
-              <Settings className="mr-2 h-4 w-4" />
-              Adjust Plan
-            </span>
-            <ArrowRight className="h-4 w-4" />
-          </Button>
-        </CardContent>
-      </Card>
-      <Card className="md:col-span-2">
-        <CardHeader>
-          <CardTitle>Did you know?</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className='w-full flex justify-center'>
-          <Carousel className="w-5/6">
-            <CarouselContent>
-              {nutritionTips.map((tip, index) => (
-                <CarouselItem key={index}>
-                  <Card className={`${tip.bgColor} border-none shadow-none`}>
-                    <CardContent className="flex flex-col items-center p-6">
-                      <tip.icon className="h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-semibold mb-2 text-muted-foreground">{tip.title}</h3>
-                      <p className="text-sm text-center text-muted-foreground">{tip.description}</p>
-                    </CardContent>
-                  </Card>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious />
-            <CarouselNext />
-          </Carousel>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-    {isModalOpen && selectedMeal && (
-      <FoodIntakeTracker
-        mealType={selectedMeal}
-        onClose={closeModal}
-        onSave={fetchNutritionData}
-        selectedDate={currentDate}
-      />
-    )}
-    <Toaster />
-  </motion.div>
-</AnimatePresence>
+            </div>
+          </CardContent>
+        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle>Nutrition Overview</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="calories" className="h-[300px]">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="calories">Calories</TabsTrigger>
+                  <TabsTrigger value="macros">Macros</TabsTrigger>
+                </TabsList>
+                <div className="pt-8">
+                  <TabsContent value="calories">
+                    <div className="flex items-center justify-center space-x-6">
+                      <div className="text-center">
+                        <div className="sm:text-2xl font-bold">{plan?.dailyCalories ?? 0}</div>
+                        <div className="text-sm text-muted-foreground">Target</div>
+                      </div>
+                      <CalorieGauge
+                        consumed={totalCalories}
+                        target={plan?.dailyCalories ?? 0}
+                        gaugeColor={gaugeColor}
+                        remainingCalories={remainingCalories}
+                      />
+                      <div className="text-center">
+                        <div className="sm:text-2xl font-bold">{totalCalories}</div>
+                        <div className="text-sm text-muted-foreground">Consumed</div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="macros">
+                    <div className="space-y-4 max-w-xl mx-auto pt-10">
+                      <MacroProgress label="Carbs" consumed={totalNutrition.carbs} total={plan?.dailyCarbs ?? 0} />
+                      <MacroProgress label="Protein" consumed={totalNutrition.proteins} total={plan?.dailyProteins ?? 0} />
+                      <MacroProgress label="Fat" consumed={totalNutrition.fats} total={plan?.dailyFats ?? 0} />
+                    </div>
+                  </TabsContent>
+                </div>
+              </Tabs>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Meal Tracker</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {mealTypes.map(({ type, icon: Icon }) => (
+                  <div key={type} className="flex justify-between items-center p-2 bg-secondary rounded">
+                    <div className="flex flex-col">
+                      <div className="flex items-center space-x-2">
+                        <Icon className="h-5 w-5" />
+                        <span>{capitalizeFirstLetter(type)}</span>
+                      </div>
+                      <div className="text-sm text-muted-foreground mt-1">
+                        {macroSplit[type].calories}/{macroSplit[type].target} calories
+                      </div>
+                    </div>
+                    <Button size="sm" onClick={() => openModal(type)}>
+                      <Plus className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button variant="outline" className="w-full justify-between">
+                <span className="flex items-center">
+                  <History className="mr-2 h-4 w-4" />
+                  View History
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" className="w-full justify-between">
+                <span className="flex items-center">
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Progress Report
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" className="w-full justify-between">
+                <span className="flex items-center">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Adjust Plan
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+          <Card className="md:col-span-2">
+            <CardHeader>
+              <CardTitle>Did you know?</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className='w-full flex justify-center'>
+                <Carousel className="w-5/6">
+                  <CarouselContent>
+                    {nutritionTips.map((tip, index) => (
+                      <CarouselItem key={index}>
+                        <Card className={`${tip.bgColor} border-none shadow-none`}>
+                          <CardContent className="flex flex-col items-center p-6">
+                            <tip.icon className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold mb-2 text-muted-foreground">{tip.title}</h3>
+                            <p className="text-sm text-center text-muted-foreground">{tip.description}</p>
+                          </CardContent>
+                        </Card>
+                      </CarouselItem>
+                    ))}
+                  </CarouselContent>
+                  <CarouselPrevious />
+                  <CarouselNext />
+                </Carousel>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        {isModalOpen && selectedMeal && (
+          <FoodIntakeTracker
+            mealType={selectedMeal}
+            onClose={closeModal}
+            onSave={async () => {
+              const newData = await fetchNutritionData(currentDate)
+              setNutritionData(newData)
+            }}
+            selectedDate={currentDate}
+          />
+        )}
+        <Toaster />
+      </motion.div>
+    </AnimatePresence>
   )
 }
 
@@ -340,7 +345,8 @@ interface CalorieGaugeProps {
   remainingCalories: number
 }
 
-function CalorieGauge({ consumed, target, gaugeColor, remainingCalories }: CalorieGaugeProps) {
+function CalorieGauge({ consumed, target, 
+gaugeColor, remainingCalories }: CalorieGaugeProps) {
   const percentage = Math.min((consumed / target) * 100, 100)
   return (
     <div className="relative w-40 h-40 sm:w-52 sm:h-52 md:w-64 md:h-54 lg:w-54">
@@ -380,7 +386,7 @@ function CalorieGauge({ consumed, target, gaugeColor, remainingCalories }: Calor
 
 interface DatePickerProps {
   currentDate: Date
-  setCurrentDate: React.Dispatch<React.SetStateAction<Date>>
+  setCurrentDate: (date: Date | undefined) => void
   popoverOpen: boolean
   setPopoverOpen: React.Dispatch<React.SetStateAction<boolean>>
 }
@@ -397,10 +403,7 @@ const DatePicker = ({ currentDate, setCurrentDate, popoverOpen, setPopoverOpen }
       <Calendar
         mode="single"
         selected={currentDate}
-        onSelect={(date) => {
-          setCurrentDate(date || new Date())
-          setPopoverOpen(false)
-        }}
+        onSelect={setCurrentDate}
         initialFocus
       />
     </PopoverContent>
