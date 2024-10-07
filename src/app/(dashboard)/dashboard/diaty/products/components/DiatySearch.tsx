@@ -300,9 +300,9 @@ const DiatySearch = () => {
                 {filteredProducts.map((product: any) => (
                   <Card
                     key={product.code}
-                    className="hover:shadow-lg transition-shadow duration-300 overflow-hidden group"
+                    className="hover:shadow-lg transition-shadow duration-300 overflow-hidden group flex flex-col h-full"
                   >
-                    <CardHeader className="p-2">
+                    <CardHeader className="p-2 flex-shrink-0">
                       <div className="w-full h-48 overflow-hidden">
                         <img
                           src={product.image_url || "/placeholder.svg?height=200&width=300"}
@@ -311,14 +311,14 @@ const DiatySearch = () => {
                         />
                       </div>
                     </CardHeader>
-                    <CardContent className="p-4 bg-muted">
+                    <CardContent className="p-4 bg-muted flex-grow flex flex-col">
                       <div className="flex items-center justify-between mb-2">
                         <CardTitle className="text-lg font-bold truncate mr-2">{product.product_name}</CardTitle>
                         {renderProductActions(product)}
                       </div>
                       <p className="text-sm text-muted-foreground">{product.brands}</p>
                     </CardContent>
-                    <CardFooter className="p-4 pt-0 flex flex-wrap gap-1 bg-secondary">
+                    <CardFooter className="p-4 pt-0 flex flex-wrap gap-1 bg-secondary mt-auto">
                       {renderTags(product).map((tag, index) => (
                         <Badge key={index} variant="default" className="text-xs">
                           {tag}
