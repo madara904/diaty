@@ -151,7 +151,8 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
             type="text"
             placeholder="Search food items..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)
+            }
           />
           <Button onClick={handleSearch}>
             <Search className="mr-2 h-4 w-4" /> Search
