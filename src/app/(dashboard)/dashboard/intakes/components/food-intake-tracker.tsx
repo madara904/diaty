@@ -4,7 +4,7 @@ import { useState } from "react"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { Search, Plus, X } from "lucide-react"
+import { Search, Plus, X, Loader2, Check } from "lucide-react"
 import { Button } from "@/app/components/ui/Button"
 import { Input } from "@/app/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
@@ -25,6 +25,7 @@ import {
 } from "@/app/components/ui/card"
 import { useToast } from "@/app/components/hooks/use-toast"
 import { format } from 'date-fns'
+import { motion } from "framer-motion"
 
 const recentItems = [
   { id: 1, name: "Apple", brand: "Nature's Best", calories: 95 },
@@ -37,10 +38,22 @@ const favoriteItems = [
 ]
 
 const manualEntrySchema = z.object({
-  calories: z.coerce.number().min(1, "Calories must be a non-negative number"),
-  carbs: z.coerce.number().min(1, "Carbs must be a non-negative number"),
-  proteins: z.coerce.number().min(1, "Proteins must be a non-negative number"),
-  fats: z.coerce.number().min(1, "Fat must be a non-negative number"),
+  calories: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.coerce.number().min(1, "Calories must be a non-negative number")
+  ),
+  carbs: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.coerce.number().min(1, "Carbs must be a non-negative number")
+  ),
+  proteins: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.coerce.number().min(1, "Proteins must be a non-negative number")
+  ),
+  fats: z.preprocess(
+    (val) => (val === '' ? undefined : val),
+    z.coerce.number().min(1, "Fat must be a non-negative number")
+  ),
 })
 
 type ManualEntryForm = z.infer<typeof manualEntrySchema>
@@ -52,9 +65,73 @@ type FoodIntakeTrackerProps = {
   selectedDate: Date;
 }
 
+interface AnimatedSubmitButtonProps {
+  isSubmitting: boolean
+  isSuccess: boolean
+  children: React.ReactNode
+}
+
+const AnimatedSubmitButton = ({ isSubmitting, isSuccess, children }: AnimatedSubmitButtonProps) => (
+  <motion.button
+    className="w-full relative overflow-hidden bg-primary text-primary-foreground h-10 px-4 py-2 rounded-md"
+    initial={false}
+    animate={isSuccess ? "success" : isSubmitting ? "submitting" : "idle"}
+    disabled={isSubmitting || isSuccess}
+  >
+    <motion.div
+      className="absolute inset-0 bg-primary"
+      variants={{
+        idle: { opacity: 1 },
+        submitting: { opacity: 1 },
+        success: { opacity: 0 },
+      }}
+      transition={{ duration: 0.3 }}
+    />
+    <motion.span
+      className="relative z-10 flex items-center justify-center"
+      variants={{
+        idle: { opacity: 1 },
+        submitting: { opacity: 0 },
+        success: { opacity: 0 },
+      }}
+    >
+      {children}
+    </motion.span>
+    <motion.div
+      className="absolute inset-0 flex items-center justify-center"
+      variants={{
+        idle: { opacity: 0 },
+        submitting: { opacity: 1 },
+        success: { opacity: 0 },
+      }}
+    >
+      <Loader2 className="h-5 w-5 animate-spin" />
+    </motion.div>
+    <motion.div
+      className="absolute inset-0 flex items-center justify-center"
+      variants={{
+        idle: { opacity: 0 },
+        submitting: { opacity: 0 },
+        success: { opacity: 1 },
+      }}
+    >
+      <motion.div
+        className="bg-green-500 rounded-full p-1"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ delay: 1.2, type: "spring", stiffness: 200, damping: 10 }}
+      >
+        <Check className="h-4 w-4 text-white" />
+      </motion.div>
+    </motion.div>
+  </motion.button>
+)
+
 export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedDate }: FoodIntakeTrackerProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<any[]>([])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
 
   const { toast } = useToast()
 
@@ -63,6 +140,7 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
   })
 
   const onSubmit = async (data: ManualEntryForm) => {
+    setIsSubmitting(true)
     try {
       const response = await fetch("/api/nutrition-data", {
         method: "POST",
@@ -75,20 +153,16 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
           date: format(selectedDate, 'yyyy-MM-dd'),
         }),
       });
-  
+
       if (response.ok) {
         const result = await response.json();
-        console.log("API Response:", result);
-        toast({
-          title: "Success",
-          description: "Nutrition data saved successfully",
-          duration: 100,
-        })
-        onSave();
-        onClose();
+        setTimeout(() => {
+          onSave();
+          onClose();
+        }, 1500)
+        setIsSuccess(true)
       } else {
         const errorData = await response.json();
-        console.error("API Error:", errorData);
         toast({
           title: "Error",
           description: errorData.error || "Failed to save nutrition data",
@@ -102,6 +176,8 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
         description: "An unexpected error occurred",
         variant: "destructive",
       })
+    } finally {
+      setIsSubmitting(false)
     }
   };
 
@@ -151,8 +227,7 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
             type="text"
             placeholder="Search food items..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)
-            }
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
           <Button onClick={handleSearch}>
             <Search className="mr-2 h-4 w-4" /> Search
@@ -196,7 +271,7 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
                         <FormItem>
                           <FormLabel>Calories</FormLabel>
                           <FormControl>
-                            <Input type="number" {...field} />
+                            <Input type="number" min={1} {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -209,7 +284,7 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
                         <FormItem>
                           <FormLabel>Carbs (g)</FormLabel>
                           <FormControl>
-                            <Input type="number" {...field} />
+                            <Input type="number" min={1} {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -222,7 +297,7 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
                         <FormItem>
                           <FormLabel>Proteins (g)</FormLabel>
                           <FormControl>
-                            <Input type="number" {...field} />
+                            <Input type="number" min={1} {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -235,13 +310,15 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
                         <FormItem>
                           <FormLabel>Fat (g)</FormLabel>
                           <FormControl>
-                            <Input type="number" {...field} />
+                            <Input type="number" min={1} {...field} onChange={(e) => field.onChange(parseInt(e.target.value))} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <Button type="submit">Add to {mealType.toLowerCase()} Intake</Button>
+                    <AnimatedSubmitButton isSubmitting={isSubmitting} isSuccess={isSuccess}>
+                      Add to {mealType.toLowerCase()} Intake
+                    </AnimatedSubmitButton>
                   </form>
                 </Form>
               </CardContent>
