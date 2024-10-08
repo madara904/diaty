@@ -1,14 +1,14 @@
 "use client"
 
-import React, { useEffect, useState, useCallback } from 'react'
-import { format, addDays, subDays, isEqual } from 'date-fns'
+import React, { useState, useCallback } from 'react'
+import { format, addDays, subDays } from 'date-fns'
 import { ChevronLeft, ChevronRight, History, TrendingUp, Settings, Utensils, Calendar as CalendarIcon, ArrowRight, User, Plus, Coffee, Moon, LightbulbIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
 import { Button } from "@/app/components/ui/Button"
 import { Progress } from "@/app/components/ui/progress"
 import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover"
 import { Calendar } from "@/app/components/ui/calendar"
-import { AnimatePresence, motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/app/components/ui/carousel"
 import { Session } from 'next-auth'
@@ -18,6 +18,7 @@ import { Toaster } from "@/app/components/ui/toaster"
 import { fetchNutritionData } from '@/lib/fetch-nutrition.data'
 import { useBodyScrollLock } from '@/app/components/hooks/use-body-scroll-lock'
 import FoodIntakeTracker from '../../intakes/components/food-intake-tracker'
+import { useKeyboardNavigation } from '@/lib/hooks/use-date-navigation'
 
 interface NutritionData {
   date: Date;
@@ -60,10 +61,10 @@ const AnimatedDateContent: React.FC<{
   return (
     <motion.div
       key={date.toISOString()}
-      initial={{ opacity: 0, x: direction * 400 }}
+      initial={{ opacity: 0, x: direction * 300 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -direction * 400 }}
-      transition={{ type: "tween", stiffness: 800, damping: 40 }}
+      exit={{ opacity: 0, x: -direction * 300 }}
+      transition={{ type: "tween", stiffness: 700, damping: 30 }}
     >
       {children}
     </motion.div>
@@ -77,28 +78,16 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedMeal, setSelectedMeal] = useState<MealType | null>(null)
   const [direction, setDirection] = useState(0)
-  const [touchStart, setTouchStart] = useState<number | null>(null)
 
   useBodyScrollLock(isModalOpen)
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await fetchNutritionData(currentDate)
-        setNutritionData(data)
-      } catch (error) {
-        console.error("Error fetching nutrition data:", error)
-      }
-    }
-
-    fetchData()
-  }, [currentDate])
 
   const changeDate = useCallback((days: number) => {
     const newDate = days > 0 ? addDays(currentDate, 1) : subDays(currentDate, 1)
     setCurrentDate(newDate)
     setDirection(days)
   }, [currentDate])
+
+  useKeyboardNavigation(changeDate)
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
@@ -118,45 +107,6 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
     setSelectedMeal(null)
   }
 
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') {
-        changeDate(-1)
-      } else if (e.key === 'ArrowRight') {
-        changeDate(1)
-      }
-    }
-
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [changeDate])
-
-  // Touch events for swiping
-  const handleTouchStart = (e: React.TouchEvent) => {
-    setTouchStart(e.touches[0].clientX)
-  }
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (touchStart === null) {
-      return
-    }
-
-    const currentTouch = e.touches[0].clientX
-    const diff = touchStart - currentTouch
-
-    if (diff > 50) {
-      changeDate(1)
-      setTouchStart(null)
-    } else if (diff < -50) {
-      changeDate(-1)
-      setTouchStart(null)
-    }
-  }
-
-  const handleTouchEnd = () => {
-    setTouchStart(null)
-  }
   const totalCalories = nutritionData.totalNutrition.calories
   const totalNutrition = nutritionData.totalNutrition
 
@@ -201,12 +151,7 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
   ]
 
   return (
-    <div
-      className={cn("mt-24 bg-background text-foreground")}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-    >
+    <div className={cn("mt-24 bg-background text-foreground")}>
       <AnimatePresence mode="wait">
         <AnimatedDateContent date={currentDate} direction={direction}>
           <Card className="w-full mb-6">
@@ -362,6 +307,7 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
                   </Carousel>
                 </div>
               </CardContent>
+            
             </Card>
           </div>
         </AnimatedDateContent>
@@ -396,7 +342,7 @@ function MacroProgress({ label, consumed, total }: MacroProgressProps) {
         <span>{label}</span>
         <span>{consumed}g / {total}g</span>
       </div>
-      <Progress  value={percentage} className="h-2 bg-secondary" />
+      <Progress value={percentage} className="h-2 bg-secondary" />
     </div>
   )
 }
