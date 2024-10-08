@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useState, useTransition } from 'react'
+import React, { useEffect, useState } from 'react'
 import { format, addDays, subDays } from 'date-fns'
 import { ChevronLeft, ChevronRight, History, TrendingUp, Settings, Utensils, Calendar as CalendarIcon, ArrowRight, User, Plus, Coffee, Moon, LightbulbIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
@@ -15,9 +15,9 @@ import { Session } from 'next-auth'
 import { Plan } from '@/types/plan'
 import { capitalizeFirstLetter, cn } from '@/lib/utils'
 import { Toaster } from "@/app/components/ui/toaster"
+import { fetchNutritionData } from '@/lib/fetch-nutrition.data'
 import { useBodyScrollLock } from '@/app/components/hooks/use-body-scroll-lock'
 import FoodIntakeTracker from '../../intakes/components/food-intake-tracker'
-import { fetchNutritionData } from '@/lib/fetch-nutrition.data'
 
 interface NutritionData {
   date: Date;
@@ -71,7 +71,7 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
         console.error("Error fetching nutrition data:", error)
       }
     }
-  
+
     fetchData()
   }, [currentDate])
 
@@ -104,10 +104,14 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
   const gaugeColor = totalCalories > (plan?.dailyCalories ?? 0) ? 'text-destructive' : 'text-primary'
   const remainingCalories = (plan?.dailyCalories ?? 0) - totalCalories
 
+  const calculateMealCalories = (mealType: MealType) => {
+    return nutritionData.meals[mealType]?.reduce((sum, meal) => sum + meal.calories, 0) || 0
+  }
+
   const macroSplit: Record<MealType, { calories: number; target: number }> = {
-    BREAKFAST: { calories: 500, target: 600 },
-    LUNCH: { calories: 700, target: 800 },
-    DINNER: { calories: 600, target: 700 },
+    BREAKFAST: { calories: calculateMealCalories('BREAKFAST'), target: 600 },
+    LUNCH: { calories: calculateMealCalories('LUNCH'), target: 800 },
+    DINNER: { calories: calculateMealCalories('DINNER'), target: 700 },
   };
 
   const nutritionTips = [
@@ -236,7 +240,7 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
                         <span>{capitalizeFirstLetter(type)}</span>
                       </div>
                       <div className="text-sm text-muted-foreground mt-1">
-                        {macroSplit[type].calories}/{macroSplit[type].target} calories
+                        {macroSplit[type].calories} / {macroSplit[type].target} calories
                       </div>
                     </div>
                     <Button size="sm" onClick={() => openModal(type)}>
@@ -333,7 +337,7 @@ function MacroProgress({ label, consumed, total }: MacroProgressProps) {
         <span>{label}</span>
         <span>{consumed}g / {total}g</span>
       </div>
-      <Progress value={percentage} className="h-2 bg-secondary" />
+      <Progress  value={percentage} className="h-2 bg-secondary" />
     </div>
   )
 }
@@ -345,8 +349,7 @@ interface CalorieGaugeProps {
   remainingCalories: number
 }
 
-function CalorieGauge({ consumed, target, 
-gaugeColor, remainingCalories }: CalorieGaugeProps) {
+function CalorieGauge({ consumed, target, gaugeColor, remainingCalories }: CalorieGaugeProps) {
   const percentage = Math.min((consumed / target) * 100, 100)
   return (
     <div className="relative w-40 h-40 sm:w-52 sm:h-52 md:w-64 md:h-54 lg:w-54">

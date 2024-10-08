@@ -37,10 +37,10 @@ const favoriteItems = [
 ]
 
 const manualEntrySchema = z.object({
-  calories: z.coerce.number().min(0, "Calories must be a non-negative number"),
-  carbs: z.coerce.number().min(0, "Carbs must be a non-negative number"),
-  proteins: z.coerce.number().min(0, "Proteins must be a non-negative number"),
-  fats: z.coerce.number().min(0, "Fat must be a non-negative number"),
+  calories: z.coerce.number().min(1, "Calories must be a non-negative number"),
+  carbs: z.coerce.number().min(1, "Carbs must be a non-negative number"),
+  proteins: z.coerce.number().min(1, "Proteins must be a non-negative number"),
+  fats: z.coerce.number().min(1, "Fat must be a non-negative number"),
 })
 
 type ManualEntryForm = z.infer<typeof manualEntrySchema>
