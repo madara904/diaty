@@ -18,7 +18,6 @@ import { Toaster } from "@/app/components/ui/toaster"
 import { fetchNutritionData } from '@/lib/fetch-nutrition.data'
 import { useBodyScrollLock } from '@/app/components/hooks/use-body-scroll-lock'
 import FoodIntakeTracker from '../../intakes/components/food-intake-tracker'
-import useDateNavigation from '@/lib/hooks/use-date-navigation'
 
 interface NutritionData {
   date: Date;
@@ -82,11 +81,6 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
     setDirection(days)
   }
 
-  useDateNavigation(
-    () => changeDate(1), 
-    () => changeDate(-1)
-  );
-
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       setCurrentDate(date)
@@ -149,14 +143,14 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
 
   return (
     <AnimatePresence mode="wait">
-    <motion.div
-      key={currentDate.toISOString()}
-      initial={{ opacity: 0, x: direction > 0 ? 300 : -300 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: direction > 0 ? -300 : 300 }}
-      transition={{ type: 'tween', stiffness: 700, damping: 30 }}
-      className={cn("mt-24 bg-background text-foreground")}
-    >
+      <motion.div
+        key={currentDate.toISOString()}
+        initial={{ opacity: 0, x: direction > 0 ? 300 : -300 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: direction > 0 ? -300 : 300 }}
+        transition={{ type: "tween", stiffness: 700, damping: 30 }}
+        className={cn("mt-24 bg-background text-foreground")}
+      >
         <Card className="w-full mb-6">
           <CardContent className="p-4 md:p-6">
             <div className="flex flex-col md:flex-row items-center justify-between w-full">
