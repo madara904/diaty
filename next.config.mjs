@@ -2,7 +2,6 @@
 const nextConfig = {  
     experimental: {
       missingSuspenseWithCSRBailout: false,
-      serverActions: true
     },
     images: {
       domains: ['images.openfoodfacts.org'],
