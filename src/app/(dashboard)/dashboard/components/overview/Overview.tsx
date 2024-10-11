@@ -15,10 +15,10 @@ import { Session } from 'next-auth'
 import { Plan } from '@/types/plan'
 import { capitalizeFirstLetter, cn } from '@/lib/utils'
 import { Toaster } from "@/app/components/ui/toaster"
-import { fetchNutritionData } from '@/lib/fetch-nutrition.data'
 import { useBodyScrollLock } from '@/app/components/hooks/use-body-scroll-lock'
-import FoodIntakeTracker from '../../intakes/components/food-intake-tracker'
+import FoodIntakeTracker from './food-intake-tracker'
 import { useKeyboardNavigation } from '@/lib/hooks/use-date-navigation'
+import { fetchNutritionData } from '@/lib/actions/actions'
 
 interface NutritionData {
   date: Date;
@@ -81,18 +81,22 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
 
   useBodyScrollLock(isModalOpen)
 
-  const changeDate = useCallback((days: number) => {
+  const changeDate = async (days: number) => {
     const newDate = days > 0 ? addDays(currentDate, 1) : subDays(currentDate, 1)
     setCurrentDate(newDate)
     setDirection(days)
-  }, [currentDate])
+    const newData = await fetchNutritionData(newDate)
+    setNutritionData(newData)
+  }
 
   useKeyboardNavigation(changeDate)
 
-  const handleDateSelect = (date: Date | undefined) => {
+  const handleDateSelect = async (date: Date | undefined) => {
     if (date) {
       setDirection(date > currentDate ? 1 : -1)
       setCurrentDate(date)
+      const newData = await fetchNutritionData(date)
+      setNutritionData(newData)
     }
     setPopoverOpen(false)
   }
@@ -311,7 +315,7 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
             </Card>
           </div>
         </AnimatedDateContent>
-      </AnimatePresence>
+        </AnimatePresence>
       {isModalOpen && selectedMeal && (
         <FoodIntakeTracker
           mealType={selectedMeal}

@@ -1,4 +1,4 @@
-import FoodIntakeTracker from "./components/food-intake-tracker"
+import FoodIntakeTracker from "../components/overview/food-intake-tracker"
 
 
 const intakeHome = () => {

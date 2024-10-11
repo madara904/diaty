@@ -10,6 +10,7 @@ import { SideBarProvider } from "@/lib/context/SideBarContext";
 import LoadingBar from "./components/ui/LoadingBar";
 import { LoadingProvider } from "./components/ui/LoadingProvider";
 import { ThemeProvider } from "@/app/components/theme-provider";
+import ReactQueryProvider from "./components/ClientWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -25,30 +26,27 @@ export default function RootLayout({
   return (
     <html lang="en">
       <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-      <body
-        className={cn(
-          "w-screen overflow-x-hidden",
-          inter.className
-        )}
-      >
+      <body className={cn("w-screen overflow-x-hidden", inter.className)}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-        <SessionProvider>
-          <SideBarProvider>
-            <LoadingProvider>
-              <LayoutWrapper>
-                <LoadingBar />
-                <NavBar />
-                <main className="container">{children}</main>
-              </LayoutWrapper>
-              <Toaster />
-            </LoadingProvider>
-          </SideBarProvider>
-        </SessionProvider>
+        <ReactQueryProvider>
+          <SessionProvider>
+            <SideBarProvider>
+              <LoadingProvider>
+                <LayoutWrapper>
+                  <LoadingBar />
+                  <NavBar />
+                  <main className="container">{children}</main>
+                </LayoutWrapper>
+                <Toaster />
+              </LoadingProvider>
+            </SideBarProvider>
+          </SessionProvider>
+          </ReactQueryProvider>
         </ThemeProvider>
       </body>
     </html>

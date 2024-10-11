@@ -4,9 +4,11 @@ import Overview from "./components/overview/Overview"
 import checkFlag from "@/lib/check-completion-flag"
 import { redirect } from "next/navigation"
 import React from "react"
-import { fetchNutritionData } from "@/lib/fetch-nutrition.data"
+import { fetchNutritionData } from "@/lib/actions/actions"
 
-const Dashboard = async () => {
+
+
+export default async function DashboardPage() {
   const session = await auth()
   const user = session?.user
 
@@ -32,5 +34,3 @@ const Dashboard = async () => {
     />
   )
 }
-
-export default Dashboard
