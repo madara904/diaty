@@ -51,6 +51,7 @@ type FoodIntakeTrackerProps = {
   onClose: () => void;
   onSave: () => void;
   selectedDate: Date;
+  
 }
 
 interface AnimatedSubmitButtonProps {

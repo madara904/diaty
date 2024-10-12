@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useTransition } from 'react'
 import { format, addDays, subDays } from 'date-fns'
 import { ChevronLeft, ChevronRight, History, TrendingUp, Settings, Utensils, Calendar as CalendarIcon, ArrowRight, User, Plus, Coffee, Moon, LightbulbIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
@@ -78,6 +78,7 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedMeal, setSelectedMeal] = useState<MealType | null>(null)
   const [direction, setDirection] = useState(0)
+  const [isPending, startTransition] = useTransition()
 
   useBodyScrollLock(isModalOpen)
 
@@ -85,8 +86,11 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
     const newDate = days > 0 ? addDays(currentDate, 1) : subDays(currentDate, 1)
     setCurrentDate(newDate)
     setDirection(days)
-    const newData = await fetchNutritionData(newDate)
-    setNutritionData(newData)
+    
+    startTransition(async () => {
+      const newData = await fetchNutritionData(newDate)
+      setNutritionData(newData)
+    })
   }
 
   useKeyboardNavigation(changeDate)
@@ -95,8 +99,11 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
     if (date) {
       setDirection(date > currentDate ? 1 : -1)
       setCurrentDate(date)
-      const newData = await fetchNutritionData(date)
-      setNutritionData(newData)
+      
+      startTransition(async () => {
+        const newData = await fetchNutritionData(date)
+        setNutritionData(newData)
+      })
     }
     setPopoverOpen(false)
   }
