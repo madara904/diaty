@@ -83,7 +83,7 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
   const { data: nutritionData, mutate } = useSWR<NutritionData>(
     `/api/nutrition-data?date=${format(currentDate, 'yyyy-MM-dd')}`,
     fetcher,
-    { fallbackData: initialNutritionData }
+    {  }
   )
 
   useBodyScrollLock(isModalOpen)
