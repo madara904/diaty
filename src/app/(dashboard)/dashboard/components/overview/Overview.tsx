@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { format, addDays, subDays } from 'date-fns'
 import { ChevronLeft, ChevronRight, History, TrendingUp, Settings, Utensils, Calendar as CalendarIcon, ArrowRight, User, Plus, Coffee, Moon, LightbulbIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
@@ -18,7 +18,7 @@ import { Toaster } from "@/app/components/ui/toaster"
 import { useBodyScrollLock } from '@/app/components/hooks/use-body-scroll-lock'
 import { useKeyboardNavigation } from '@/lib/hooks/use-date-navigation'
 import FoodIntakeTracker from './food-intake-tracker'
-import useSWR from 'swr'
+import useSWR, { preload, useSWRConfig } from 'swr'
 
 interface NutritionData {
   date: Date;
@@ -73,6 +73,13 @@ const AnimatedDateContent: React.FC<{
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
+const preloadAdjacentDates = (date: Date) => {
+  const prevDate = subDays(date, 1)
+  const nextDate = addDays(date, 1)
+  preload(`/api/nutrition-data?date=${format(prevDate, 'yyyy-MM-dd')}`, fetcher)
+  preload(`/api/nutrition-data?date=${format(nextDate, 'yyyy-MM-dd')}`, fetcher)
+}
+
 export default function Overview({ user, plan, initialNutritionData }: OverviewProps) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date())
   const [popoverOpen, setPopoverOpen] = useState(false)
@@ -80,13 +87,20 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
   const [selectedMeal, setSelectedMeal] = useState<MealType | null>(null)
   const [direction, setDirection] = useState(0)
 
-  const { data: nutritionData, mutate } = useSWR<NutritionData>(
+  const { data: nutritionData, mutate: mutateNutritionData } = useSWR<NutritionData>(
     `/api/nutrition-data?date=${format(currentDate, 'yyyy-MM-dd')}`,
     fetcher,
-    {  }
+    {
+      fallbackData: initialNutritionData,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
   )
-
   useBodyScrollLock(isModalOpen)
+
+  useEffect(() => {
+    preloadAdjacentDates(currentDate)
+  }, [currentDate])
 
   const changeDate = (days: number) => {
     const newDate = days > 0 ? addDays(currentDate, 1) : subDays(currentDate, 1)
@@ -96,23 +110,24 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
 
   useKeyboardNavigation(changeDate)
 
-  const handleDateSelect = (date: Date | undefined) => {
+  const handleDateSelect = useCallback((date: Date | undefined) => {
     if (date) {
       setDirection(date > currentDate ? 1 : -1)
       setCurrentDate(date)
+      preloadAdjacentDates(date)
     }
     setPopoverOpen(false)
-  }
+  }, [currentDate])
 
-  const openModal = (meal: MealType) => {
+  const openModal = useCallback((meal: MealType) => {
     setSelectedMeal(meal)
     setIsModalOpen(true)
-  }
+  }, [])
 
-  const closeModal = () => {
+  const closeModal = useCallback(() => {
     setIsModalOpen(false)
     setSelectedMeal(null)
-  }
+  }, [])
 
   const totalCalories = nutritionData?.totalNutrition.calories || 0
   const totalNutrition = nutritionData?.totalNutrition || { calories: 0, carbs: 0, proteins: 0, fats: 0 }
@@ -120,9 +135,9 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
   const gaugeColor = totalCalories > (plan?.dailyCalories ?? 0) ? 'text-destructive' : 'text-primary'
   const remainingCalories = (plan?.dailyCalories ?? 0) - totalCalories
 
-  const calculateMealCalories = (mealType: MealType) => {
+  const calculateMealCalories = useCallback((mealType: MealType) => {
     return nutritionData?.meals![mealType]?.reduce((sum, meal) => sum + meal.calories, 0) || 0
-  }
+  }, [nutritionData])
 
   const macroSplit: Record<MealType, { calories: number; target: number }> = {
     BREAKFAST: { calories: calculateMealCalories('BREAKFAST'), target: 600 },
@@ -156,6 +171,24 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
       bgColor: "bg-purple-100",
     },
   ]
+
+
+  const optimisticUpdateNutritionData = (newData: Partial<NutritionData>) => {
+    mutateNutritionData((currentData) => {
+      if (!currentData) return currentData
+      return {
+        ...currentData,
+        totalNutrition: {
+          ...currentData.totalNutrition,
+          ...newData.totalNutrition,
+        },
+        meals: {
+          ...currentData.meals,
+          ...newData.meals,
+        },
+      }
+    }, false)
+  }
 
   return (
     <div className={cn("mt-24 bg-background text-foreground")}>
@@ -317,14 +350,15 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
             
             </Card>
           </div>
-        </AnimatedDateContent>
+          </AnimatedDateContent>
       </AnimatePresence>
       {isModalOpen && selectedMeal && (
         <FoodIntakeTracker
           mealType={selectedMeal}
           onClose={closeModal}
-          onSave={async () => {
-            await mutate()
+          onSave={async (newData) => {
+            optimisticUpdateNutritionData(newData)
+            await mutateNutritionData()
           }}
           selectedDate={currentDate}
         />

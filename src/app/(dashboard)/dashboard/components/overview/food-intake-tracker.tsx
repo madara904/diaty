@@ -61,8 +61,8 @@ type ManualEntryForm = z.infer<typeof manualEntrySchema>
 type FoodIntakeTrackerProps = {
   mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER';
   onClose: () => void;
-  onSave: () => void;
   selectedDate: Date;
+  onSave: (NutritionData: any) => void
 }
 
 interface AnimatedSubmitButtonProps {
@@ -156,11 +156,30 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
 
       if (response.ok) {
         const result = await response.json();
+        const newData = {
+          totalNutrition: {
+            calories: data.calories,
+            carbs: data.carbs,
+            proteins: data.proteins,
+            fats: data.fats,
+          },
+          meals: {
+            [mealType]: [
+              {
+                calories: data.calories,
+                carbs: data.carbs,
+                proteins: data.proteins,
+                fats: data.fats,
+                mealType: mealType,
+              },
+            ],
+          },
+        };
+        onSave(newData);
+        setIsSuccess(true)
         setTimeout(() => {
-          onSave();
           onClose();
         }, 1500)
-        setIsSuccess(true)
       } else {
         const errorData = await response.json();
         toast({
