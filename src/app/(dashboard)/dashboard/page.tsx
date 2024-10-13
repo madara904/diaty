@@ -1,16 +1,27 @@
+import { Suspense } from 'react'
 import { auth } from "@/auth"
 import fetchPlan from "@/lib/fetch-user-plan"
 import Overview from "./components/overview/Overview"
 import checkFlag from "@/lib/check-completion-flag"
 import { redirect } from "next/navigation"
-import React from "react"
 import { fetchNutritionData } from "@/lib/actions/actions"
+import { Plan } from '@/types/plan'
+import { User } from '.prisma/client'
 
+interface NutritionDataLoaderProps {
+  user: User
+  plan: Plan | null | undefined
+  date: Date
+}
 
+async function NutritionDataLoader({ user, plan, date }: NutritionDataLoaderProps) {
+  const nutritionData = await fetchNutritionData(date)
+  return <Overview user={user} plan={plan} initialNutritionData={nutritionData} />
+}
 
 export default async function DashboardPage() {
   const session = await auth()
-  const user = session?.user
+  const user = session?.user as User 
 
   if (!user || !session) {
     redirect("/sign-in")
@@ -24,13 +35,10 @@ export default async function DashboardPage() {
   }
 
   const today = new Date()
-  const initialNutritionData = await fetchNutritionData(today)
 
   return (
-    <Overview 
-      user={user} 
-      plan={plan} 
-      initialNutritionData={initialNutritionData}
-    />
+    <Suspense fallback={<div>Loading...</div>}>
+      <NutritionDataLoader user={user} plan={plan} date={today} />
+    </Suspense>
   )
 }

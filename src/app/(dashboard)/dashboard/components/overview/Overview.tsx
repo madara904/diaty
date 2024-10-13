@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useTransition } from 'react'
+import React, { useCallback, useState, useTransition } from 'react'
 import { format, addDays, subDays } from 'date-fns'
 import { ChevronLeft, ChevronRight, History, TrendingUp, Settings, Utensils, Calendar as CalendarIcon, ArrowRight, User, Plus, Coffee, Moon, LightbulbIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
@@ -82,16 +82,15 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
 
   useBodyScrollLock(isModalOpen)
 
-  const changeDate = async (days: number) => {
+  const changeDate = useCallback(async (days: number) => {
     const newDate = days > 0 ? addDays(currentDate, 1) : subDays(currentDate, 1)
     setCurrentDate(newDate)
-    setDirection(days)
     
     startTransition(async () => {
       const newData = await fetchNutritionData(newDate)
       setNutritionData(newData)
     })
-  }
+  }, [currentDate])
 
   useKeyboardNavigation(changeDate)
 
