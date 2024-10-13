@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useCallback, useState, useTransition } from 'react'
+import React, { useState, useCallback } from 'react'
 import { format, addDays, subDays } from 'date-fns'
 import { ChevronLeft, ChevronRight, History, TrendingUp, Settings, Utensils, Calendar as CalendarIcon, ArrowRight, User, Plus, Coffee, Moon, LightbulbIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
@@ -16,9 +16,9 @@ import { Plan } from '@/types/plan'
 import { capitalizeFirstLetter, cn } from '@/lib/utils'
 import { Toaster } from "@/app/components/ui/toaster"
 import { useBodyScrollLock } from '@/app/components/hooks/use-body-scroll-lock'
-import FoodIntakeTracker from './food-intake-tracker'
 import { useKeyboardNavigation } from '@/lib/hooks/use-date-navigation'
-import { fetchNutritionData } from '@/lib/actions/actions'
+import FoodIntakeTracker from './food-intake-tracker'
+import useSWR from 'swr'
 
 interface NutritionData {
   date: Date;
@@ -27,7 +27,7 @@ interface NutritionData {
     carbs: number;
     proteins: number;
     fats: number;
-  };
+  } 
   meals: {
     [key: string]: Array<{
       calories: number;
@@ -35,8 +35,8 @@ interface NutritionData {
       proteins: number;
       fats: number;
       mealType: string;
-    }>;
-  };
+    }>
+  }  | undefined
 }
 
 type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER';
@@ -71,38 +71,35 @@ const AnimatedDateContent: React.FC<{
   );
 };
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
 export default function Overview({ user, plan, initialNutritionData }: OverviewProps) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date())
-  const [nutritionData, setNutritionData] = useState<NutritionData>(initialNutritionData)
   const [popoverOpen, setPopoverOpen] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedMeal, setSelectedMeal] = useState<MealType | null>(null)
   const [direction, setDirection] = useState(0)
-  const [isPending, startTransition] = useTransition()
+
+  const { data: nutritionData, mutate } = useSWR<NutritionData>(
+    `/api/nutrition-data?date=${format(currentDate, 'yyyy-MM-dd')}`,
+    fetcher,
+    { fallbackData: initialNutritionData }
+  )
 
   useBodyScrollLock(isModalOpen)
 
-  const changeDate = useCallback(async (days: number) => {
+  const changeDate = (days: number) => {
     const newDate = days > 0 ? addDays(currentDate, 1) : subDays(currentDate, 1)
     setCurrentDate(newDate)
-    
-    startTransition(async () => {
-      const newData = await fetchNutritionData(newDate)
-      setNutritionData(newData)
-    })
-  }, [currentDate])
+    setDirection(days)
+  }
 
   useKeyboardNavigation(changeDate)
 
-  const handleDateSelect = async (date: Date | undefined) => {
+  const handleDateSelect = (date: Date | undefined) => {
     if (date) {
       setDirection(date > currentDate ? 1 : -1)
       setCurrentDate(date)
-      
-      startTransition(async () => {
-        const newData = await fetchNutritionData(date)
-        setNutritionData(newData)
-      })
     }
     setPopoverOpen(false)
   }
@@ -117,14 +114,14 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
     setSelectedMeal(null)
   }
 
-  const totalCalories = nutritionData.totalNutrition.calories
-  const totalNutrition = nutritionData.totalNutrition
+  const totalCalories = nutritionData?.totalNutrition.calories || 0
+  const totalNutrition = nutritionData?.totalNutrition || { calories: 0, carbs: 0, proteins: 0, fats: 0 }
 
   const gaugeColor = totalCalories > (plan?.dailyCalories ?? 0) ? 'text-destructive' : 'text-primary'
   const remainingCalories = (plan?.dailyCalories ?? 0) - totalCalories
 
   const calculateMealCalories = (mealType: MealType) => {
-    return nutritionData.meals[mealType]?.reduce((sum, meal) => sum + meal.calories, 0) || 0
+    return nutritionData?.meals![mealType]?.reduce((sum, meal) => sum + meal.calories, 0) || 0
   }
 
   const macroSplit: Record<MealType, { calories: number; target: number }> = {
@@ -321,14 +318,13 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
             </Card>
           </div>
         </AnimatedDateContent>
-        </AnimatePresence>
+      </AnimatePresence>
       {isModalOpen && selectedMeal && (
         <FoodIntakeTracker
           mealType={selectedMeal}
           onClose={closeModal}
           onSave={async () => {
-            const newData = await fetchNutritionData(currentDate)
-            setNutritionData(newData)
+            await mutate()
           }}
           selectedDate={currentDate}
         />

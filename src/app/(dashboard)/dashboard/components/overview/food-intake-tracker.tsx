@@ -1,4 +1,4 @@
-'use client'
+"use client"
 
 import { useState } from "react"
 import { z } from "zod"
@@ -8,12 +8,24 @@ import { Search, Plus, X, Loader2, Check } from "lucide-react"
 import { Button } from "@/app/components/ui/Button"
 import { Input } from "@/app/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/app/components/ui/form"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/app/components/ui/card"
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/app/components/ui/form"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/app/components/ui/card"
 import { useToast } from "@/app/components/hooks/use-toast"
 import { format } from 'date-fns'
 import { motion } from "framer-motion"
-import { addNutritionData } from '@/lib/actions/actions'
 
 const recentItems = [
   { id: 1, name: "Apple", brand: "Nature's Best", calories: 95 },
@@ -51,7 +63,6 @@ type FoodIntakeTrackerProps = {
   onClose: () => void;
   onSave: () => void;
   selectedDate: Date;
-  
 }
 
 interface AnimatedSubmitButtonProps {
@@ -131,27 +142,35 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
   const onSubmit = async (data: ManualEntryForm) => {
     setIsSubmitting(true)
     try {
-      const result = await addNutritionData({
-        ...data,
-        mealType: mealType,
-        date: format(selectedDate, 'yyyy-MM-dd'),
-      })
+      const response = await fetch("/api/nutrition-data", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ...data,
+          mealType: mealType.toLocaleUpperCase(),
+          date: format(selectedDate, 'yyyy-MM-dd'),
+        }),
+      });
 
-      if (result.success) {
+      if (response.ok) {
+        const result = await response.json();
         setTimeout(() => {
-          onSave()
-          onClose()
+          onSave();
+          onClose();
         }, 1500)
         setIsSuccess(true)
       } else {
+        const errorData = await response.json();
         toast({
           title: "Error",
-          description: result.error || "Failed to save nutrition data",
+          description: errorData.error || "Failed to save nutrition data",
           variant: "destructive",
         })
       }
     } catch (error) {
-      console.error("Error submitting form:", error)
+      console.error("Error submitting form:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred",
@@ -160,7 +179,7 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
     } finally {
       setIsSubmitting(false)
     }
-  }
+  };
 
   const handleSearch = () => {
     setSearchResults([
@@ -191,11 +210,11 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
   )
 
   return (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center">
-        <div className="bg-background shadow-lg rounded-lg p-6 w-full max-w-3xl max-h-full overflow-y-auto">
+    <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center">
+      <div className="bg-background shadow-lg rounded-lg p-6 w-full max-w-3xl max-h-full overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-bold">Add {mealType} Intake</h2>
+            <h2 className="text-2xl font-bold">Add {mealType.toLowerCase()} Intake</h2>
             <p className="text-sm text-muted-foreground">{format(selectedDate, 'MMMM d, yyyy')}</p>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
@@ -222,7 +241,7 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
           </div>
         )}
 
-<Tabs defaultValue="recent">
+        <Tabs defaultValue="recent">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="recent">Recent</TabsTrigger>
             <TabsTrigger value="favorites">Favorites</TabsTrigger>
