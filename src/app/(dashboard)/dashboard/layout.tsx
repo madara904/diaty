@@ -27,7 +27,7 @@ export default function RootLayout({
       <body className={cn("w-screen overflow-x-hidden", inter.className)}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
         >
