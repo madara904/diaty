@@ -26,6 +26,7 @@ import {
 import { useToast } from "@/app/components/hooks/use-toast"
 import { format } from 'date-fns'
 import { motion } from "framer-motion"
+import useSWR from "swr"
 
 const recentItems = [
   { id: 1, name: "Apple", brand: "Nature's Best", calories: 95 },
@@ -127,6 +128,8 @@ const AnimatedSubmitButton = ({ isSubmitting, isSuccess, children }: AnimatedSub
   </motion.button>
 )
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
 export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedDate }: FoodIntakeTrackerProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<any[]>([])
@@ -138,6 +141,13 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
   const form = useForm<ManualEntryForm>({
     resolver: zodResolver(manualEntrySchema),
   })
+
+  const { data: nutritionData, error } = useSWR(
+    `/api/nutrition-data?date=${format(selectedDate, 'yyyy-MM-dd')}&limit=10`,
+    fetcher
+  )
+
+  const recentIntakes = nutritionData?.meals[mealType] || []
 
   const onSubmit = async (data: ManualEntryForm) => {
     setIsSubmitting(true)
@@ -156,26 +166,7 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
 
       if (response.ok) {
         const result = await response.json();
-        const newData = {
-          totalNutrition: {
-            calories: data.calories,
-            carbs: data.carbs,
-            proteins: data.proteins,
-            fats: data.fats,
-          },
-          meals: {
-            [mealType]: [
-              {
-                calories: data.calories,
-                carbs: data.carbs,
-                proteins: data.proteins,
-                fats: data.fats,
-                mealType: mealType,
-              },
-            ],
-          },
-        };
-        onSave(newData);
+        onSave(result);
         setIsSuccess(true)
         setTimeout(() => {
           onClose();
@@ -201,6 +192,7 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
   };
 
   const handleSearch = () => {
+    // Implement your search logic here
     setSearchResults([
       { id: 5, name: "Pizza Slice", brand: "Domino's", calories: 285 },
       { id: 6, name: "Caesar Salad", brand: "Fresh & Green", calories: 180 },
@@ -209,17 +201,19 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
 
   const renderFoodItems = (items: any[]) => (
     <div className="grid gap-4 md:grid-row-2 lg:grid-row-3">
-      {items.map((item) => (
-        <Card key={item.id} className="border-none shadow-none">
+      {items.map((item, index) => (
+        <Card key={item.id || index} className="border-none shadow-none">
           <CardHeader className="p-0 space-y-0 border-b pb-3">
-            <CardTitle className="text-md">{item.name}</CardTitle>
+            <CardTitle className="text-md">{item.name || `Meal ${index + 1}`}</CardTitle>
             <div className="flex items-center justify-between">
-              <CardDescription className="text-xs">{item.brand}</CardDescription>
+              <CardDescription className="text-xs">{item.brand || format(selectedDate, 'MMM d, yyyy')}</CardDescription>
               <div className="flex items-center gap-5">
                 <p className="text-xs">{item.calories} calories</p>
-                <Button size="icon_small" className="rounded-full bg-primary/60 hover:bg-primary/40">
-                  <Plus size={20} />
-                </Button>
+                {!item.id && (
+                  <Button size="icon_small" className="rounded-full bg-primary/60 hover:bg-primary/40">
+                    <Plus size={20} />
+                  </Button>
+                )}
               </div>
             </div>
           </CardHeader>
@@ -228,9 +222,17 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
     </div>
   )
 
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to fetch recent intakes",
+      variant: "destructive",
+    })
+  }
+
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center">
-      <div className="bg-background shadow-lg rounded-lg p-6 w-full max-w-3xl max-h-full overflow-y-auto">
+      <div className="bg-background shadow-lg rounded-lg p-6 w-full max-w-3xl h-[80vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-2xl font-bold">Add {mealType.toLowerCase()} Intake</h2>
@@ -260,19 +262,14 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
           </div>
         )}
 
-        <Tabs defaultValue="recent">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="recent">Recent</TabsTrigger>
-            <TabsTrigger value="favorites">Favorites</TabsTrigger>
+<Tabs defaultValue="recent">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="recent">Recent Intakes</TabsTrigger>
             <TabsTrigger value="manual">Manual Entry</TabsTrigger>
           </TabsList>
           <TabsContent value="recent">
-            <h2 className="text-sm font-semibold mb-4">Recent Items</h2>
-            {renderFoodItems(recentItems)}
-          </TabsContent>
-          <TabsContent value="favorites">
-            <h2 className="text-sm font-semibold mb-4">Favorite Items</h2>
-            {renderFoodItems(favoriteItems)}
+            <h2 className="text-sm font-semibold mb-4">Recent {mealType} Intakes</h2>
+            {renderFoodItems(recentIntakes)}
           </TabsContent>
           <TabsContent value="manual">
             <Card>
@@ -342,7 +339,7 @@ export default function FoodIntakeTracker({ mealType, onClose, onSave, selectedD
                 </Form>
               </CardContent>
             </Card>
-          </TabsContent>
+            </TabsContent>
         </Tabs>
       </div>
     </div>

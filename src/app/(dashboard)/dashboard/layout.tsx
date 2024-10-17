@@ -7,10 +7,8 @@ import "@/app/(index)/globals.css";
 import { Toaster } from "@/app/components/ui/toaster";
 import LayoutWrapper from "./components/overview/LayoutWrapper";
 import { SideBarProvider } from "@/lib/context/SideBarContext";
-import LoadingBar from "./components/ui/LoadingBar";
-import { LoadingProvider } from "./components/ui/LoadingProvider";
 import { ThemeProvider } from "@/app/components/theme-provider";
-import ReactQueryProvider from "./components/ClientWrapper";
+import NextTopLoader from 'nextjs-toploader';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -33,20 +31,18 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-        <ReactQueryProvider>
-          <SessionProvider>
+        <SessionProvider>
             <SideBarProvider>
-              <LoadingProvider>
                 <LayoutWrapper>
-                  <LoadingBar />
                   <NavBar />
-                  <main className="container">{children}</main>
+                  <main className="container">
+                  <NextTopLoader showSpinner={false}/>
+                    {children}
+                  </main>
                 </LayoutWrapper>
                 <Toaster />
-              </LoadingProvider>
             </SideBarProvider>
           </SessionProvider>
-          </ReactQueryProvider>
         </ThemeProvider>
       </body>
     </html>

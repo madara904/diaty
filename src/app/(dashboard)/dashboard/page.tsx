@@ -6,6 +6,7 @@ import { redirect } from "next/navigation"
 import React from "react"
 import { fetchNutritionData } from "@/lib/fetch-nutrition-data"
 
+
 const Dashboard = async () => {
   const session = await auth()
   const user = session?.user

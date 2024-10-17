@@ -39,30 +39,31 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await auth();
-
-  if (!session || !session.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await auth();
+  
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  
+    const { searchParams } = new URL(req.url);
+    const dateParam = searchParams.get("date");
+    const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined;
+  
+    if (!dateParam) {
+      return NextResponse.json({ error: "Date parameter is required" }, { status: 400 });
+    }
+  
+    const date = new Date(dateParam);
+  
+    if (isNaN(date.getTime())) {
+      return NextResponse.json({ error: "Invalid date format" }, { status: 400 });
+    }
+  
+    try {
+      const nutritionData = await fetchNutritionData(date, limit);
+      return NextResponse.json(nutritionData, { status: 200 });
+    } catch (error) {
+      console.error("Error fetching nutrition data:", error);
+      return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+    }
   }
-
-  const { searchParams } = new URL(req.url);
-  const dateParam = searchParams.get("date");
-
-  if (!dateParam) {
-    return NextResponse.json({ error: "Date parameter is required" }, { status: 400 });
-  }
-
-  const date = new Date(dateParam);
-
-  if (isNaN(date.getTime())) {
-    return NextResponse.json({ error: "Invalid date format" }, { status: 400 });
-  }
-
-  try {
-    const nutritionData = await fetchNutritionData(date);
-    return NextResponse.json(nutritionData, { status: 200 });
-  } catch (error) {
-    console.error("Error fetching nutrition data:", error);
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
-  }
-}
