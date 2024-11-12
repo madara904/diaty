@@ -52,6 +52,7 @@ export default function Home() {
                   <div className="mt-4 sm:mt-0 sm:ml-3">
                     <Link
                       href="/dashboard"
+                      prefetch={true}
                       className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full")}
                     >
                       Browse Diaty
