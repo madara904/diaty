@@ -78,6 +78,9 @@ interface SavedFoodItem {
   mealType: string
   date: string
   createdAt: string
+  isVerified: boolean
+  isUserData: boolean
+  isOtherUserData: boolean
 }
 
 export default function FoodSearchModal({ 
@@ -506,15 +509,37 @@ export default function FoodSearchModal({
                       {savedFoodResults.length > 0 && (
                         <div className="space-y-2">
                           <h3 className="text-sm font-medium">Search Results - Saved Foods</h3>
-                          {savedFoodResults.map((food) => (
-                            <Card key={food.id} className="cursor-pointer hover:bg-accent/50 transition-colors">
-                              <CardContent className="p-3" onClick={() => handleSelectFood(food)}>
+                          {savedFoodResults.map((item, idx) => (
+                            <Card key={`saved-${idx}`} className="cursor-pointer hover:bg-accent/50 transition-colors">
+                              <CardContent className="p-3" onClick={() => handleSelectFood(item)}>
                                 <div className="flex justify-between items-center">
                                   <div>
-                                    <h4 className="font-medium">{food.name}</h4>
+                                    <h4 className="font-medium">{item.name}</h4>
                                     <p className="text-sm text-muted-foreground">
-                                      {food.calories} kcal/100g
+                                      {item.calories} kcal | {item.carbs}g C | {item.proteins}g P | {item.fats}g F
                                     </p>
+                                    <div className="flex gap-1 mt-1">
+                                      {item.isVerified && (
+                                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                          Verified
+                                        </Badge>
+                                      )}
+                                      {item.isUserData && (
+                                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                                          Your Food
+                                        </Badge>
+                                      )}
+                                      {item.isOtherUserData && (
+                                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                                          Community
+                                        </Badge>
+                                      )}
+                                      {!item.isUserData && !item.isOtherUserData && !item.isVerified && (
+                                        <Badge variant="outline">
+                                          Database
+                                        </Badge>
+                                      )}
+                                    </div>
                                   </div>
                                   <Button size="sm" variant="ghost">
                                     Select

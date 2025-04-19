@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
     `;
     
     // Search for user's custom foods from their nutrition data
-    const nutritionDataItems = await prisma.$queryRaw<NutritionDataItem[]>`
+    const userNutritionDataItems = await prisma.$queryRaw<NutritionDataItem[]>`
       SELECT 
         name, 
         calories, 
@@ -94,9 +94,28 @@ export async function GET(req: NextRequest) {
       LIMIT ${limit}
     `;
     
-    // Convert grouped items to a standardized format
-    const formattedResults = nutritionDataItems.map(item => ({
-      id: `custom-${Buffer.from(item.name || "").toString('base64')}`, // Generate a stable ID
+    // Search for other users' foods (most popular ones)
+    const otherUsersNutritionDataItems = await prisma.$queryRaw<NutritionDataItem[]>`
+      SELECT 
+        name, 
+        calories, 
+        carbs, 
+        proteins, 
+        fats, 
+        COUNT(*) as frequency
+      FROM "nutrition_data"
+      WHERE 
+        "userId" != ${session.user.id} AND
+        name IS NOT NULL AND
+        name ILIKE ${`%${query}%`}
+      GROUP BY name, calories, carbs, proteins, fats
+      ORDER BY frequency DESC
+      LIMIT ${limit}
+    `;
+    
+    // Convert user's data to standard format
+    const userFormattedResults = userNutritionDataItems.map(item => ({
+      id: `user-${Buffer.from(item.name || "").toString('base64')}`, // Generate a stable ID
       name: item.name || "Unnamed Food",
       calories: parseFloat(item.calories.toString()),
       carbs: parseFloat(item.carbs.toString()),
@@ -106,15 +125,32 @@ export async function GET(req: NextRequest) {
       frequency: parseInt(item.frequency.toString()),
       grams: 100,
       isCustom: true, // Flag to indicate this is from user entries
+      isUserData: true // Flag to indicate this is from the current user
     }));
     
-    // Combine both result sets, prioritizing shared items
+    // Convert other users' data to standard format
+    const otherUsersFormattedResults = otherUsersNutritionDataItems.map(item => ({
+      id: `other-${Buffer.from(item.name || "").toString('base64')}`, // Generate a stable ID
+      name: item.name || "Unnamed Food",
+      calories: parseFloat(item.calories.toString()),
+      carbs: parseFloat(item.carbs.toString()),
+      proteins: parseFloat(item.proteins.toString()),
+      fats: parseFloat(item.fats.toString()),
+      carbUnits: parseFloat(item.carbs.toString()) / 10,
+      frequency: parseInt(item.frequency.toString()),
+      grams: 100,
+      isCustom: true, // Flag to indicate this is from user entries
+      isOtherUserData: true // Flag to indicate this is from other users
+    }));
+    
+    // Combine all result sets, prioritizing shared items, then user's data, then other users' data
     const combinedResults = [
       ...sharedItems,
-      ...formattedResults
+      ...userFormattedResults,
+      ...otherUsersFormattedResults
     ];
     
-    // Filter out duplicates (items might appear in both tables)
+    // Filter out duplicates (items might appear in multiple sources)
     const uniqueResults = combinedResults.filter((item, index, self) => 
       index === self.findIndex(t => t.name === item.name && 
         Math.abs(t.calories - item.calories) < 0.01 && 
