@@ -74,26 +74,22 @@ export default function Home() {
                 <p className="mt-6 text-xl text-muted-foreground max-w-2xl">
                   Take control of your health with personalized nutrition tracking, smart insights, and expert guidance.
                 </p>
-                <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-                  <Link
-                    href="/sign-in"
-                    className={cn(buttonVariants({ size: "lg" }), "group")}
-                  >
-                    Get Started
-                    <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                  </Link>
-                  <Link
-                    href="/dashboard"
-                    className={cn(buttonVariants({ variant: "outline", size: "lg" }))}
-                  >
-                    Learn More
-                  </Link>
-                </div>
-                <div className="mt-8 flex items-center gap-8 justify-center lg:justify-start">
-                  <div className="flex -space-x-4">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="h-10 w-10 rounded-full border-2 border-background bg-primary/10" />
-                    ))}
+                <div className="mt-8 sm:mt-10 sm:flex sm:justify-center lg:justify-start">
+                  <div className="rounded-md shadow">
+                    <Link
+                      href="/sign-in"
+                      className={cn(buttonVariants({ size: "lg" }), "w-full")}
+                    >
+                      Get Started
+                    </Link>
+                  </div>
+                  <div className="mt-4 sm:mt-0 sm:ml-3">
+                    <Link
+                      href="/dashboard"
+                      className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full")}
+                    >
+                      Browse Diaty
+                    </Link>
                   </div>
                   <p className="text-sm text-muted-foreground">
                     <span className="font-semibold text-foreground">1000+</span> active users
