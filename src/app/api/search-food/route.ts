@@ -53,12 +53,20 @@ export async function GET(req: Request) {
 
     const data = await response.json();
     const validProducts = data.products?.filter((product: any) => {
-      const hasValidNutrients = product.nutriments && 
-                                (product.nutriments.calories || product.nutriments.carbohydrates || product.nutriments.proteins);
+      // Check if product has nutriments with any valid nutrition data
+      const hasValidNutrients = product.nutriments && (
+        product.nutriments["energy-kcal"] ||
+        product.nutriments["energy-kcal_100g"] ||
+        product.nutriments.energy ||
+        product.nutriments.carbohydrates ||
+        product.nutriments["carbohydrates_100g"] ||
+        product.nutriments.proteins ||
+        product.nutriments["proteins_100g"] ||
+        product.nutriments.fat ||
+        product.nutriments["fat_100g"]
+      );
+      
       return product.product_name && 
-             product.image_url && 
-             product.image_small_url &&
-             product.image_thumb_url &&  
              !product.error && 
              hasValidNutrients;
     }) || [];

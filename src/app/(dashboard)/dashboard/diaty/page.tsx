@@ -2,6 +2,7 @@ import React from 'react'
 import DiatySearch from './products/components/DiatySearch'
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';
+import DashboardWrapper from '../components/DashboardWrapper';
 
 const DiatyHome = async ()  => {
 
@@ -13,7 +14,9 @@ const DiatyHome = async ()  => {
   } 
   
   return (
-    <DiatySearch />
+    <DashboardWrapper title="Diaty Search">
+      <DiatySearch />
+    </DashboardWrapper>
   )
 }
 

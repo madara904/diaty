@@ -5,7 +5,6 @@ import { SessionProvider } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import NavBar from "@/app/components/NavBar";
 import Footer from "@/app/components/Footer";
-import { SideBarProvider } from "@/lib/context/SideBarContext";
 import { ThemeProvider } from "../components/theme-provider";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -30,13 +29,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <SessionProvider>
-            <SideBarProvider>
               <NavBar />
               <main className="flex-1 container max-w-7xl mx-auto pt-24 antialiased light">
                 {children}
               </main>
               <Footer />
-            </SideBarProvider>
           </SessionProvider>
         </ThemeProvider>
       </body>

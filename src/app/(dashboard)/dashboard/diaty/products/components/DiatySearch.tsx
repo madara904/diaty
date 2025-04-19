@@ -200,7 +200,7 @@ const DiatySearch = () => {
   }
 
   return (
-    <div className="px-4 mt-24 mb-6 bg-background text-foreground">
+    <div className="px-4 mb-6 bg-background text-foreground">
       <div className="p-8 rounded-lg hover:shadow-sm mb-12">
         <h1 className="text-4xl font-bold mb-4 text-center">Discover Healthy Foods</h1>
         <p className="text-muted-foreground text-center mb-8">Search, explore, and learn about nutritious options for your diet</p>

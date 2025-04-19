@@ -8,8 +8,8 @@ import { Button } from "@/app/components/ui/Button"
 import { Progress } from "@/app/components/ui/progress"
 import { Popover, PopoverContent, PopoverTrigger } from "@/app/components/ui/popover"
 import { Calendar } from "@/app/components/ui/calendar"
-import { motion, AnimatePresence } from 'framer-motion'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/app/components/ui/tabs"
+import { AnimatePresence, motion } from "framer-motion"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/app/components/ui/carousel"
 import { Session } from 'next-auth'
 import { Plan } from '@/types/plan'
@@ -17,46 +17,49 @@ import { capitalizeFirstLetter, cn } from '@/lib/utils'
 import { Toaster } from "@/app/components/ui/toaster"
 import { useBodyScrollLock } from '@/app/components/hooks/use-body-scroll-lock'
 import { useKeyboardNavigation } from '@/lib/hooks/use-date-navigation'
-import FoodIntakeTracker from './food-intake-tracker'
 import useSWR, { preload, useSWRConfig } from 'swr'
+import Link from 'next/link'
+import FoodSearchModal from './FoodSearchModal'
 
 interface NutritionData {
-  date: Date;
+  date: Date
   totalNutrition: {
-    calories: number;
-    carbs: number;
-    proteins: number;
-    fats: number;
-  } 
-  meals: {
-    [key: string]: Array<{
-      calories: number;
-      carbs: number;
-      proteins: number;
-      fats: number;
-      mealType: string;
-    }>
-  }  | undefined
+    calories: number
+    carbs: number
+    proteins: number
+    fats: number
+  }
+  meals:
+    | {
+        [key: string]: Array<{
+          calories: number
+          carbs: number
+          proteins: number
+          fats: number
+          mealType: string
+        }>
+      }
+    | undefined
 }
 
-type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER';
+type MealType = "BREAKFAST" | "LUNCH" | "DINNER"
 
 const mealTypes: { type: MealType; icon: React.ElementType }[] = [
-  { type: 'BREAKFAST', icon: Coffee },
-  { type: 'LUNCH', icon: Utensils },
-  { type: 'DINNER', icon: Moon },
-];
+  { type: "BREAKFAST", icon: Coffee },
+  { type: "LUNCH", icon: Utensils },
+  { type: "DINNER", icon: Moon },
+]
 
 interface OverviewProps {
-  user: Session['user']
+  user: Session["user"]
   plan: Plan | undefined | null
   initialNutritionData: NutritionData
 }
 
 const AnimatedDateContent: React.FC<{
-  date: Date;
-  direction: number;
-  children: React.ReactNode;
+  date: Date
+  direction: number
+  children: React.ReactNode
 }> = ({ date, direction, children }) => {
   return (
     <motion.div
@@ -68,35 +71,43 @@ const AnimatedDateContent: React.FC<{
     >
       {children}
     </motion.div>
-  );
-};
+  )
+}
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
+// Global SWR configuration to reduce redundant requests
+const swrConfig = {
+  revalidateOnFocus: false,
+  revalidateOnReconnect: false,
+  dedupingInterval: 10000, // 10 seconds
+  focusThrottleInterval: 5000, // 5 seconds
+}
 
 const preloadAdjacentDates = (date: Date) => {
   const prevDate = subDays(date, 1)
   const nextDate = addDays(date, 1)
-  preload(`/api/nutrition-data?date=${format(prevDate, 'yyyy-MM-dd')}`, fetcher)
-  preload(`/api/nutrition-data?date=${format(nextDate, 'yyyy-MM-dd')}`, fetcher)
+  preload(`/api/nutrition-data?date=${format(prevDate, "yyyy-MM-dd")}`, fetcher)
+  preload(`/api/nutrition-data?date=${format(nextDate, "yyyy-MM-dd")}`, fetcher)
 }
 
 export default function Overview({ user, plan, initialNutritionData }: OverviewProps) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date())
   const [popoverOpen, setPopoverOpen] = useState(false)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedMeal, setSelectedMeal] = useState<MealType | null>(null)
   const [direction, setDirection] = useState(0)
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+  const [foodModalOpen, setFoodModalOpen] = useState(false)
+  const [selectedMealType, setSelectedMealType] = useState<"BREAKFAST" | "LUNCH" | "DINNER">("BREAKFAST")
 
   const { data: nutritionData, mutate: mutateNutritionData } = useSWR<NutritionData>(
-    `/api/nutrition-data?date=${format(currentDate, 'yyyy-MM-dd')}`,
+    `/api/nutrition-data?date=${format(currentDate, "yyyy-MM-dd")}`,
     fetcher,
     {
       fallbackData: initialNutritionData,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    }
+      ...swrConfig,
+    },
   )
-  useBodyScrollLock(isModalOpen)
+  // Body scroll lock no longer needed as we're using page navigation
 
   useEffect(() => {
     preloadAdjacentDates(currentDate)
@@ -110,40 +121,41 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
 
   useKeyboardNavigation(changeDate)
 
-  const handleDateSelect = useCallback((date: Date | undefined) => {
-    if (date) {
-      setDirection(date > currentDate ? 1 : -1)
-      setCurrentDate(date)
-      preloadAdjacentDates(date)
-    }
-    setPopoverOpen(false)
-  }, [currentDate])
+  const handleDateSelect = useCallback(
+    (date: Date | undefined) => {
+      if (date) {
+        setDirection(date > currentDate ? 1 : -1)
+        setCurrentDate(date)
+        setSelectedDate(date) // Update selectedDate when currentDate changes
+        preloadAdjacentDates(date)
+      }
+      setPopoverOpen(false)
+    },
+    [currentDate],
+  )
 
-  const openModal = useCallback((meal: MealType) => {
-    setSelectedMeal(meal)
-    setIsModalOpen(true)
-  }, [])
+  // No need for a navigation function with Next.js Link component
 
-  const closeModal = useCallback(() => {
-    setIsModalOpen(false)
-    setSelectedMeal(null)
-  }, [])
+  // TODO: For full SWR migration, refactor all fetches (add/edit/delete) to call mutateNutritionData after success.
 
   const totalCalories = nutritionData?.totalNutrition.calories || 0
   const totalNutrition = nutritionData?.totalNutrition || { calories: 0, carbs: 0, proteins: 0, fats: 0 }
 
-  const gaugeColor = totalCalories > (plan?.dailyCalories ?? 0) ? 'text-destructive' : 'text-primary'
+  const gaugeColor = totalCalories > (plan?.dailyCalories ?? 0) ? "text-destructive" : "text-primary"
   const remainingCalories = (plan?.dailyCalories ?? 0) - totalCalories
 
-  const calculateMealCalories = useCallback((mealType: MealType) => {
-    return nutritionData?.meals![mealType]?.reduce((sum, meal) => sum + meal.calories, 0) || 0
-  }, [nutritionData])
+  const calculateMealCalories = useCallback(
+    (mealType: MealType) => {
+      return nutritionData?.meals![mealType]?.reduce((sum, meal) => sum + meal.calories, 0) || 0
+    },
+    [nutritionData],
+  )
 
   const macroSplit: Record<MealType, { calories: number; target: number }> = {
-    BREAKFAST: { calories: calculateMealCalories('BREAKFAST'), target: 600 },
-    LUNCH: { calories: calculateMealCalories('LUNCH'), target: 800 },
-    DINNER: { calories: calculateMealCalories('DINNER'), target: 700 },
-  };
+    BREAKFAST: { calories: calculateMealCalories("BREAKFAST"), target: 600 },
+    LUNCH: { calories: calculateMealCalories("LUNCH"), target: 800 },
+    DINNER: { calories: calculateMealCalories("DINNER"), target: 700 },
+  }
 
   const nutritionTips = [
     {
@@ -172,7 +184,6 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
     },
   ]
 
-
   const optimisticUpdateNutritionData = (newData: Partial<NutritionData>) => {
     mutateNutritionData((currentData) => {
       if (!currentData) return currentData
@@ -191,7 +202,7 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
   }
 
   return (
-    <div className={cn("mt-24 bg-background text-foreground")}>
+    <div className={cn("bg-background text-foreground")}>
       <AnimatePresence mode="wait">
         <AnimatedDateContent date={currentDate} direction={direction}>
           <Card className="w-full mb-6">
@@ -206,10 +217,10 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.5 }}
                     >
-                      Welcome back,{' '}
+                      Welcome back,{" "}
                       {user?.name
-                        ? user.name.split(' ')[0].charAt(0).toUpperCase() + user.name.split(' ')[0].slice(1)
-                        : 'User'}
+                        ? user.name.split(" ")[0].charAt(0).toUpperCase() + user.name.split(" ")[0].slice(1)
+                        : "User"}
                     </motion.h2>
                     <p className="text-sm md:text-base text-muted-foreground">
                       Let's continue your nutrition journey today.
@@ -220,7 +231,12 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
                   <Button variant="outline" onClick={() => changeDate(-1)} aria-label="Previous day">
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <DatePicker currentDate={currentDate} setCurrentDate={handleDateSelect} popoverOpen={popoverOpen} setPopoverOpen={setPopoverOpen} />
+                  <DatePicker
+                    currentDate={currentDate}
+                    setCurrentDate={handleDateSelect}
+                    popoverOpen={popoverOpen}
+                    setPopoverOpen={setPopoverOpen}
+                  />
                   <Button variant="outline" onClick={() => changeDate(1)} aria-label="Next day">
                     <ChevronRight className="h-4 w-4" />
                   </Button>
@@ -261,7 +277,11 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
                     <TabsContent value="macros">
                       <div className="space-y-4 max-w-xl mx-auto pt-10">
                         <MacroProgress label="Carbs" consumed={totalNutrition.carbs} total={plan?.dailyCarbs ?? 0} />
-                        <MacroProgress label="Protein" consumed={totalNutrition.proteins} total={plan?.dailyProteins ?? 0} />
+                        <MacroProgress
+                          label="Protein"
+                          consumed={totalNutrition.proteins}
+                          total={plan?.dailyProteins ?? 0}
+                        />
                         <MacroProgress label="Fat" consumed={totalNutrition.fats} total={plan?.dailyFats ?? 0} />
                       </div>
                     </TabsContent>
@@ -286,7 +306,10 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
                           {macroSplit[type].calories} / {macroSplit[type].target} calories
                         </div>
                       </div>
-                      <Button size="sm" onClick={() => openModal(type)}>
+                      <Button size="sm" onClick={() => {
+                        setSelectedMealType(type)
+                        setFoodModalOpen(true)
+                      }}>
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
@@ -327,7 +350,7 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
                 <CardTitle>Did you know?</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className='w-full flex justify-center'>
+                <div className="w-full flex justify-center">
                   <Carousel className="w-5/6">
                     <CarouselContent>
                       {nutritionTips.map((tip, index) => (
@@ -347,23 +370,19 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
                   </Carousel>
                 </div>
               </CardContent>
-            
             </Card>
           </div>
-          </AnimatedDateContent>
+        </AnimatedDateContent>
       </AnimatePresence>
-      {isModalOpen && selectedMeal && (
-        <FoodIntakeTracker
-          mealType={selectedMeal}
-          onClose={closeModal}
-          onSave={async (newData) => {
-            optimisticUpdateNutritionData(newData)
-            await mutateNutritionData()
-          }}
-          selectedDate={currentDate}
-        />
-      )}
+      {/* Food intake tracker is now a separate page */}
       <Toaster />
+      <FoodSearchModal
+        isOpen={foodModalOpen}
+        onClose={() => setFoodModalOpen(false)}
+        currentDate={currentDate}
+        onFoodAdded={() => mutateNutritionData()}
+        defaultMealType={selectedMealType}
+      />
     </div>
   )
 }
@@ -380,7 +399,9 @@ function MacroProgress({ label, consumed, total }: MacroProgressProps) {
     <div className="space-y-1">
       <div className="flex justify-between text-sm">
         <span>{label}</span>
-        <span>{consumed}g / {total}g</span>
+        <span>
+          {consumed}g / {total}g
+        </span>
       </div>
       <Progress value={percentage} className="h-2 bg-secondary" />
     </div>
@@ -399,15 +420,7 @@ function CalorieGauge({ consumed, target, gaugeColor, remainingCalories }: Calor
   return (
     <div className="relative w-40 h-40 sm:w-52 sm:h-52 md:w-64 md:h-54 lg:w-54">
       <svg className="w-full h-full" viewBox="0 0 100 100">
-        <circle
-          cx="50"
-          cy="50"
-          r="45"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="6"
-          className="text-muted"
-        />
+        <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="6" className="text-muted" />
         <circle
           cx="50"
           cy="50"
@@ -425,7 +438,7 @@ function CalorieGauge({ consumed, target, gaugeColor, remainingCalories }: Calor
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
         <div className="text-2xl sm:text-3xl md:text-4xl font-bold">{Math.abs(remainingCalories)}</div>
         <div className="text-sm sm:text-base text-muted-foreground">
-          {remainingCalories >= 0 ? 'remaining' : 'over'}
+          {remainingCalories >= 0 ? "remaining" : "over"}
         </div>
       </div>
     </div>
@@ -444,16 +457,11 @@ const DatePicker = ({ currentDate, setCurrentDate, popoverOpen, setPopoverOpen }
     <PopoverTrigger asChild>
       <Button variant="outline">
         <CalendarIcon className="mr-2 h-4 w-4" />
-        {format(currentDate, 'PPP')}
+        {format(currentDate, "PPP")}
       </Button>
     </PopoverTrigger>
     <PopoverContent className="w-auto p-0" align="end">
-      <Calendar
-        mode="single"
-        selected={currentDate}
-        onSelect={setCurrentDate}
-        initialFocus
-      />
+      <Calendar mode="single" selected={currentDate} onSelect={setCurrentDate} initialFocus />
     </PopoverContent>
   </Popover>
 )

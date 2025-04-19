@@ -1,25 +1,24 @@
 "use server"
-import { auth } from "@/auth";
-import ProfileSection from "./components/ProfileSection"
-import { getUserData } from "@/lib/getUserData"
-import { redirect } from "next/navigation";
-import React from "react"
+import React from 'react'
+import { auth } from '@/auth'
+import { redirect } from 'next/navigation'
+import DashboardWrapper from '../components/DashboardWrapper'
+import ProfileSection from './components/ProfileSection'
+import { getUserData } from '@/lib/getUserData'
 
-export default async function Profile () {
-  
-  const session = await auth();
-  const user = await getUserData();
+const ProfilePage = async () => {
+  const session = await auth()
+  const user = await getUserData()
 
-  if (!user || !session){
+  if (!user || !session) {
     redirect("/sign-in")
-}
+  }
 
   return (
-    <>
-    <div className='mt-24 font-medium justify-center min-h-screen'>
-      <ProfileSection user={user}/>
-    </div>
-
-    </>
+    <DashboardWrapper title="Profile">
+      <ProfileSection user={user} />
+    </DashboardWrapper>
   )
 }
+
+export default ProfilePage

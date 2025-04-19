@@ -14,19 +14,25 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { calories, carbs, proteins, fats, mealType, date } = body;
+    const { name, calories, carbs, proteins, fats, mealType, date } = body;
+    
+    // Ensure we have a valid date
+    if (!date) {
+      return NextResponse.json({ error: "Date is required" }, { status: 400 });
+    }
 
     const mealTypeEnum = mealType.toUpperCase() as MealType;
 
     const newNutritionData = await prisma.nutritionData.create({
       data: {
         userId: user.id,
-        date: new Date(date),
-        calories: Number(calories),
-        carbs: Number(carbs),
-        proteins: Number(proteins),
-        fats: Number(fats),
-        carbUnits: Number(carbs) / 10,
+        name: name || "Custom Food Item", // Add name field with fallback
+        date: new Date(date), // Convert string date to Date object
+        calories: Number(calories) || 0,
+        carbs: Number(carbs) || 0,
+        proteins: Number(proteins) || 0,
+        fats: Number(fats) || 0,
+        carbUnits: Number(carbs) / 10 || 0,
         mealType: mealTypeEnum,
       },
     });
@@ -47,8 +53,9 @@ export async function GET(req: NextRequest) {
   
     const { searchParams } = new URL(req.url);
     const dateParam = searchParams.get("date");
+    const mealType = searchParams.get("mealType")?.toUpperCase();
     const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined;
-  
+    
     if (!dateParam) {
       return NextResponse.json({ error: "Date parameter is required" }, { status: 400 });
     }
@@ -60,10 +67,42 @@ export async function GET(req: NextRequest) {
     }
   
     try {
-      const nutritionData = await fetchNutritionData(date, limit);
+      const nutritionData = await fetchNutritionData(date, mealType, limit);
       return NextResponse.json(nutritionData, { status: 200 });
     } catch (error) {
       console.error("Error fetching nutrition data:", error);
       return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
     }
   }
+
+// This is a catch-all route handler for DELETE requests with an ID in the path
+export async function DELETE(req: NextRequest) {
+  const session = await auth();
+  const user = session?.user;
+
+  if (!user || !user.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  try {
+    // Extract the ID from the URL path
+    const url = new URL(req.url);
+    const pathParts = url.pathname.split('/');
+    const id = pathParts[pathParts.length - 1];
+
+    if (!id) {
+      return NextResponse.json({ error: "ID is required" }, { status: 400 });
+    }
+
+    await prisma.nutritionData.delete({
+      where: {
+        id: id,
+      },
+    });
+
+    return NextResponse.json({ message: "Item deleted successfully" }, { status: 200 });
+  } catch (error) {
+    console.error("Error deleting nutrition data:", error);
+    return NextResponse.json({ error: "Failed to delete nutrition data" }, { status: 500 });
+  }
+}

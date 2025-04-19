@@ -5,7 +5,6 @@ import Link from "next/link";
 import { buttonVariants } from "@/app/components/ui/Button";
 import UserButton from "./UserButton";
 import { User } from "next-auth";
-import { useSideBarContext } from "../../lib/context/SideBarContext";
 import React, { useEffect, useState } from "react"; // Import useEffect and useState
 import { ModeToggle } from "./theme-toggle";
 
@@ -15,7 +14,6 @@ interface NavBarCredsProps {
 }
 
 export default function NavBarCreds({ user, session }: NavBarCredsProps) {
-  const { isCollapsed } = useSideBarContext();
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -35,7 +33,7 @@ export default function NavBarCreds({ user, session }: NavBarCredsProps) {
     <div
       className={cn(
         "flex container justify-between h-full items-center pb-1",
-        !isCollapsed ? "max-w-7xl" : "max-w-8xl",
+        "max-w-7xl"
       )}
     >
       <div className="flex justify-center ml-8 sm:m-0">

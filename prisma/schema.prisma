@@ -78,21 +78,46 @@ model VerificationToken {
 }
 
 model NutritionData {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date              DateTime
+  name              String?  // Added name field for food label
+  calories          Float
+  carbs             Float
+  proteins          Float
+  fats              Float
+  carbUnits         Float?   
+  mealType          MealType @default(BREAKFAST)
+  sharedItemId      String?  // Reference to a shared item if this was added from shared database
+  sharedNutritionItem SharedNutritionItem? @relation(fields: [sharedItemId], references: [id])
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("nutrition_data")
+}
+
+// Shared nutrition items that can be reused by all users
+model SharedNutritionItem {
   id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  date        DateTime
+  name        String
   calories    Float
   carbs       Float
   proteins    Float
   fats        Float
-  carbUnits   Float?   
-  mealType    MealType @default(BREAKFAST)
-
+  carbUnits   Float    // Calculated as carbs / 10
+  grams       Float    @default(100) // Default serving size
+  createdBy   String?  // Optional reference to user who created it
+  isVerified  Boolean  @default(false) // Whether this item has been verified for accuracy
+  
+  // Items that reference this shared item
+  nutritionData NutritionData[]
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("nutrition_data")
+  @@map("shared_nutrition_items")
 }
 
 enum MealType {

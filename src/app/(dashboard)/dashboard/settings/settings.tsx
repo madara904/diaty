@@ -19,7 +19,7 @@ const Settings = ({ plan, user, availablePlans }: SettingsProps) => {
   const [currentPlan, setCurrentPlan] = useState(plan?.name || ""); // Track plan name only
   const [isLoading, setIsLoading] = useState(false); // Track loading state
   const [isDialogOpen, setIsDialogOpen] = useState(false); // Track dialog state
-  const { toast } = useToast(); 
+  const { toast } = useToast();
 
   // Handle the form submission and plan change
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

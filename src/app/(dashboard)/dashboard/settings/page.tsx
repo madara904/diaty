@@ -1,31 +1,30 @@
 "use server";
 
-import { auth } from "@/auth";
-import fetchPlan from "@/lib/fetch-user-plan";
-import Settings from "./settings";
-import fetchAvailablePlans from "@/lib/available-plans";
-import { redirect } from "next/navigation";
-import React from "react";
+import React from 'react'
+import { auth } from '@/auth'
+import { redirect } from 'next/navigation'
+import DashboardWrapper from '../components/DashboardWrapper'
+import Settings from './settings'
+import fetchPlan from '@/lib/fetch-user-plan'
+import fetchAvailablePlans from '@/lib/available-plans'
 
-const SettingsHome = async () => {
+const SettingsPage = async () => {
+  const session = await auth()
+  const user = session?.user
 
-  const session = await auth();
-  const user = session?.user || null;
-
-  if (!user || !session){
+  if (!user || !session) {
     redirect("/sign-in")
-}
+  }
 
-  const plan = await fetchPlan(user) || null;
-  const availablePlans = await fetchAvailablePlans();
+  const fetchedPlan = await fetchPlan(user)
+  const plan = fetchedPlan || null
+  const availablePlans = await fetchAvailablePlans()
 
   return (
-    <>
-      <div className="mt-24">
+    <DashboardWrapper title="Settings">
       <Settings user={user} plan={plan} availablePlans={availablePlans} />
-      </div>
-    </>
-  );
-};
+    </DashboardWrapper>
+  )
+}
 
-export default SettingsHome;
+export default SettingsPage
