@@ -11,7 +11,7 @@ import {
   DialogDescription, 
   DialogFooter, 
   DialogHeader, 
-  DialogTitle 
+  DialogTitle
 } from "@/app/components/ui/dialog"
 import { 
   Tabs, 
@@ -362,7 +362,7 @@ export default function FoodSearchModal({
       }
     }
   }, [grams, selectedFood, view, form])
-  
+
   // Reset state when dialog closes
   useEffect(() => {
     if (!isOpen) {
@@ -385,8 +385,8 @@ export default function FoodSearchModal({
   }, [currentDate, form, recentItemsUrl, isOpen]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent>
         {view === "search" && (
           <>
             <DialogHeader>
@@ -662,9 +662,22 @@ export default function FoodSearchModal({
                   />
                 </div>
                 
-                <Button type="submit" className="w-full">
-                  Add to Tracker
-                </Button>
+                <DialogFooter>
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Add Food'
+                    )}
+                  </Button>
+                </DialogFooter>
               </form>
             </Form>
           </>
@@ -765,9 +778,22 @@ export default function FoodSearchModal({
                   />
                 </div>
                 
-                <Button type="submit" className="w-full">
-                  Add to Tracker
-                </Button>
+                <DialogFooter>
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      'Add to Tracker'
+                    )}
+                  </Button>
+                </DialogFooter>
               </form>
             </Form>
           </>
@@ -869,46 +895,23 @@ export default function FoodSearchModal({
                 </div>
                 
                 <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setView("search")}>
-                    Cancel
-                  </Button>
-                  <Button type="submit" disabled={isSubmitting}>
+                  <Button 
+                    type="submit" 
+                    className="w-full"
+                    disabled={isSubmitting}
+                  >
                     {isSubmitting ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Updating...
+                        Saving...
                       </>
                     ) : (
-                      "Update Food"
+                      'Update Food'
                     )}
                   </Button>
                 </DialogFooter>
               </form>
             </Form>
-          </>
-        )}
-        
-        {(view === "detail" || view === "custom") && (
-          <>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setView("search")}>
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                form={view === "detail" ? "food-detail-form" : "custom-food-form"}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Add Food"
-                )}
-              </Button>
-            </DialogFooter>
           </>
         )}
       </DialogContent>

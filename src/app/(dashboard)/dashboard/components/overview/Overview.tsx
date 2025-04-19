@@ -15,7 +15,6 @@ import { Session } from 'next-auth'
 import { Plan } from '@/types/plan'
 import { capitalizeFirstLetter, cn } from '@/lib/utils'
 import { Toaster } from "@/app/components/ui/toaster"
-import { useBodyScrollLock } from '@/app/components/hooks/use-body-scroll-lock'
 import { useKeyboardNavigation } from '@/lib/hooks/use-date-navigation'
 import useSWR, { preload, useSWRConfig } from 'swr'
 import Link from 'next/link'
