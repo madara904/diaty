@@ -295,36 +295,38 @@ const DiatySearch = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
-                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6 px-2"
               >
                 {filteredProducts.map((product: any) => (
                   <Card
                     key={product.code}
-                    className="hover:shadow-lg transition-shadow duration-300 overflow-hidden group flex flex-col h-full"
+                    className="max-w-[320px] w-full mx-auto bg-background border border-border/20 rounded-lg shadow-md flex flex-col items-center p-0"
                   >
-                    <CardHeader className="p-2 flex-shrink-0">
-                      <div className="w-full h-48 overflow-hidden">
-                        <img
-                          src={product.image_url || "/placeholder.svg?height=200&width=300"}
-                          alt={product.product_name}
-                          className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-105"
-                        />
+                    <div className="w-full aspect-square bg-white flex items-center justify-center rounded-t-lg overflow-hidden">
+                      <Image
+                        src={product.image_url || "/placeholder.svg?height=200&width=300"}
+                        alt={product.product_name}
+                        fill
+                        sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 23vw"
+                        className="object-contain w-full h-full max-w-full max-h-full mx-auto my-0"
+                        onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg?height=200&width=300'; }}
+                        priority={false}
+                      />
+                    </div>
+                    <div className="flex flex-col items-center p-3 w-full">
+                      <CardTitle className="text-center text-base font-semibold w-full truncate mb-1">{product.product_name}</CardTitle>
+                      <p className="text-center text-xs text-muted-foreground w-full truncate mb-1">{product.brands}</p>
+                      <div className="flex flex-wrap justify-center gap-1 mt-2">
+                        {renderTags(product).map((tag, index) => (
+                          <Badge key={index} variant="default" className="text-xs">
+                            {tag}
+                          </Badge>
+                        ))}
                       </div>
-                    </CardHeader>
-                    <CardContent className="p-4 bg-muted flex-grow flex flex-col">
-                      <div className="flex items-center justify-between mb-2">
-                        <CardTitle className="text-lg font-bold truncate mr-2">{product.product_name}</CardTitle>
+                      <div className="flex justify-center w-full mt-2">
                         {renderProductActions(product)}
                       </div>
-                      <p className="text-sm text-muted-foreground">{product.brands}</p>
-                    </CardContent>
-                    <CardFooter className="p-4 pt-0 flex flex-wrap gap-1 bg-secondary mt-auto">
-                      {renderTags(product).map((tag, index) => (
-                        <Badge key={index} variant="default" className="text-xs">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </CardFooter>
+                    </div>
                   </Card>
                 ))}
               </motion.div>
@@ -343,13 +345,17 @@ const DiatySearch = () => {
                   {filteredProducts.map((product: any) => (
                     <TableRow key={product.code}>
                       <TableCell>
-                        <Image
-                          src={product.image_url || "/placeholder.svg?height=64&width=64"}
-                          alt={product.product_name}
-                          width={64}
-                          height={64}
-                          className="object-cover rounded"
-                        />
+                        <div className="relative w-16 h-16 bg-white rounded aspect-square overflow-hidden flex items-center justify-center">
+                          <Image
+                            src={product.image_url || "/placeholder.svg?height=64&width=64"}
+                            alt={product.product_name}
+                            fill
+                            sizes="64px"
+                            className="object-contain w-full h-full"
+                            onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg?height=64&width=64'; }}
+                            priority={false}
+                          />
+                        </div>
                       </TableCell>
                       <TableCell>{product.product_name}</TableCell>
                       <TableCell>{product.brands}</TableCell>

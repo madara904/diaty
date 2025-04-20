@@ -30,6 +30,8 @@ interface NutritionData {
   meals:
     | {
         [key: string]: Array<{
+          id: string
+          name: string
           calories: number
           carbs: number
           proteins: number
@@ -290,22 +292,24 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
               <CardContent>
                 <div className="space-y-4">
                   {mealTypes.map(({ type, icon: Icon }) => (
-                    <div key={type} className="flex justify-between items-center p-2 bg-secondary rounded">
-                      <div className="flex flex-col">
-                        <div className="flex items-center space-x-2">
-                          <Icon className="h-5 w-5" />
-                          <span>{capitalizeFirstLetter(type)}</span>
+                    <div key={type} className="flex flex-col gap-2 p-2 bg-secondary rounded">
+                      <div className="flex justify-between items-center">
+                        <div className="flex flex-col">
+                          <div className="flex items-center space-x-2">
+                            <Icon className="h-5 w-5" />
+                            <span>{capitalizeFirstLetter(type)}</span>
+                          </div>
+                          <div className="text-sm text-muted-foreground mt-1">
+                            {macroSplit[type].calories} / {macroSplit[type].target} calories
+                          </div>
                         </div>
-                        <div className="text-sm text-muted-foreground mt-1">
-                          {macroSplit[type].calories} / {macroSplit[type].target} calories
-                        </div>
+                        <Button size="sm" onClick={() => {
+                          setSelectedMealType(type)
+                          setFoodModalOpen(true)
+                        }}>
+                          <Plus className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button size="sm" onClick={() => {
-                        setSelectedMealType(type)
-                        setFoodModalOpen(true)
-                      }}>
-                        <Plus className="h-4 w-4" />
-                      </Button>
                     </div>
                   ))}
                 </div>
