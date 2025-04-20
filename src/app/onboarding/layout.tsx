@@ -1,5 +1,6 @@
 import "@/app/(index)/globals.css";
 import { Toaster } from "../components/ui/toaster";
+import { SessionProvider } from "next-auth/react";
 
 export const metadata = {
   title: 'Next.js',
@@ -15,8 +16,10 @@ export default function RootLayout({
     <html lang="en">
 
       <body>
+        <SessionProvider>
         {children}
         <Toaster />
+        </SessionProvider>
       </body>
     </html>
   )

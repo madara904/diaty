@@ -1,188 +1,446 @@
-'use client';
+"use client"
 
-import { useState } from 'react';
-import { Button } from "@/app/components/ui/Button";
-import { useForm, SubmitHandler } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useToast } from '../components/hooks/use-toast';
-import { z } from 'zod';
-import PersonalInfoStep from './components/PersonalInfoStep';
-import PlanSelectionStep from './components/PlanSelectionStep';
-import ConfirmationStep from './components/ConfirmationStep';
+import React, { useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { z } from 'zod';
+import { calculateTargetCalories } from '@/lib/calculateCalories';
 
-// Define the steps for the onboarding process
-const steps = ['Personal Info', 'Plan Selection', 'Confirmation'];
-
-// Validation schemas
-const personalInfoSchema = z.object({
-    weight: z.string().min(1, "Weight is required").refine(val => !isNaN(Number(val)) && Number(val) > 0, "Weight must be a positive number"),
-    height: z.string().min(1, "Height is required").refine(val => !isNaN(Number(val)) && Number(val) > 0, "Height must be a positive number"),
-    age: z.string().min(1, "Age is required").refine(val => !isNaN(Number(val)) && Number(val) > 0 && Number(val) < 120, "Age must be between 1 and 120"),
-    gender: z.enum(['male', 'female', 'other'], { required_error: "Gender is required" }),
+// Define the schema for validation
+const onboardingSchema = z.object({
+  name: z.string().min(1, 'Name is required'),
+  weight: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, { 
+    message: 'Valid weight is required' 
+  }).optional().or(z.literal('')), 
+  height: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, { 
+    message: 'Valid height is required' 
+  }).optional().or(z.literal('')), 
+  age: z.string().refine(val => !isNaN(parseInt(val)) && parseInt(val) > 0, { 
+    message: 'Valid age is required' 
+  }).optional().or(z.literal('')), 
+  gender: z.enum(['MALE', 'FEMALE', 'OTHER', 'PREFER_NOT_TO_SAY']),
+  activityLevel: z.enum(['SEDENTARY', 'LIGHTLY_ACTIVE', 'MODERATELY_ACTIVE', 'VERY_ACTIVE', 'EXTRA_ACTIVE']),
+  goal: z.enum(['WEIGHT_LOSS', 'WEIGHT_GAIN', 'MAINTENANCE', 'MUSCLE_GAIN']),
 });
 
-const planSchema = z.object({
-    plan: z.enum(['Fitness', 'Weight Gainer', 'Weight Loss'], { required_error: "Plan selection is required" }),
-});
+type OnboardingFormData = z.infer<typeof onboardingSchema>;
 
-const formSchema = personalInfoSchema.merge(planSchema);
+export default function OnboardingForm({ plans }: { plans: { id: string, name: string }[] }) {
+  const { data: session, update } = useSession();
+  const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  
+  // Form state
+  const [formData, setFormData] = useState<OnboardingFormData>({
+    name: '',
+    weight: '',
+    height: '',
+    age: '',
+    gender: 'PREFER_NOT_TO_SAY',
+    activityLevel: 'SEDENTARY',
+    goal: 'MAINTENANCE',
+  });
 
-type FormData = z.infer<typeof formSchema>;
+  // Steps configuration
+  const steps = [
+    { 
+      id: 1, 
+      title: 'Personal Information',
+      fields: ['name', 'weight', 'height', 'age', 'gender'] 
+    },
+    { 
+      id: 2, 
+      title: 'Lifestyle & Goals',
+      fields: ['activityLevel', 'goal'] 
+    },
+    { 
+      id: 3, 
+      title: 'Review & Confirm',
+      fields: [] 
+    },
+  ];
 
-interface OnboardingFormProps {
-    plans: { id: string; name: string }[];
-}
+  // Handle input changes
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error for this field when user types
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
 
-export default function OnboardingForm({ plans }: OnboardingFormProps) {
-    const [currentStep, setCurrentStep] = useState(0);
-    const { toast } = useToast();
-    const router = useRouter();
+  // Validate current step
+  const validateStep = (stepIndex: number) => {
+    const currentStepFields = steps[stepIndex - 1].fields;
+    const newErrors: Record<string, string> = {};
+    let isValid = true;
 
-    const form = useForm<FormData>({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-            weight: '',
-            height: '',
-            age: '',
-            gender: undefined,
-            plan: undefined,
-        },
+    // Only validate fields in the current step
+    currentStepFields.forEach(field => {
+      try {
+        // Create a partial schema with just this field
+        const fieldSchema = z.object({ 
+          [field]: onboardingSchema.shape[field as keyof typeof onboardingSchema.shape] 
+        });
+        
+        // Validate just this field
+        fieldSchema.parse({ [field]: formData[field as keyof OnboardingFormData] });
+      } catch (error) {
+        if (error instanceof z.ZodError) {
+          error.errors.forEach(err => {
+            const fieldName = err.path[0].toString();
+            newErrors[fieldName] = err.message;
+          });
+          isValid = false;
+        }
+      }
     });
 
-    const { handleSubmit, trigger, watch } = form;
+    setErrors(newErrors);
+    return isValid;
+  };
 
-    const onSubmit: SubmitHandler<FormData> = async (data) => {
-        const requestData = { ...data, completeFlag: true };
+  // Handle next button click
+  const handleNext = () => {
+    if (validateStep(currentStep)) {
+      if (currentStep < steps.length) {
+        setCurrentStep(prev => prev + 1);
+      } else {
+        handleSubmit();
+      }
+    }
+  };
 
-        try {
-            const response = await fetch('/api/submit-profile', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestData),
-            });
+  // Handle back button click
+  const handleBack = () => {
+    if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1);
+    }
+  };
 
-            if (!response.ok) throw new Error('Failed to submit the profile');
-            toast({ title: "Profile Completed", description: "Your diet profile has been successfully created!" });
-            router.push('/dashboard');
-        } catch (error) {
-            toast({ title: "Submission Error", description: "There was a problem submitting your profile.", variant: "destructive" });
-        }
-    };
+  // Submit the form
+  const handleSubmit = async () => {
+    try {
+      setSubmitError(null); // Clear any previous errors
+      
+      // Validate all fields before submission
+      onboardingSchema.parse(formData);
+      
+      if (!session?.user) {
+        console.error("Session user is missing:", session);
+        setSubmitError("Session information is missing. Please refresh the page.");
+        return;
+      }
+      
+      setIsLoading(true);
 
-    const handleNext = async () => {
-        const fieldsToValidate = currentStep === 0 ? ['weight', 'height', 'age', 'gender'] : ['plan'];
-        const isStepValid = await trigger(fieldsToValidate as any);
+      // Calculate target calories
+      let targetCalories = null;
+      if (formData.weight && formData.height && formData.age && formData.gender && formData.activityLevel) {
+        targetCalories = calculateTargetCalories({
+          weight: parseFloat(formData.weight),
+          height: parseFloat(formData.height),
+          age: parseInt(formData.age),
+          gender: formData.gender,
+          activityLevel: formData.activityLevel,
+          goal: formData.goal
+        });
+      }
 
-        if (isStepValid) {
-            setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1));
-        } else {
-            toast({ title: "Validation Error", description: "Please fill out all required fields correctly.", variant: "destructive" });
-        }
-    };
+      // Prepare payload for API
+      const payload = {
+        name: formData.name,
+        email: session.user.email || '',
+        weight: formData.weight,
+        height: formData.height,
+        age: formData.age,
+        gender: formData.gender,
+        activityLevel: formData.activityLevel,
+        goal: formData.goal,
+        targetCalories: targetCalories,
+        completeFlag: true, // Set the completion flag to true
+      };
 
-    const handlePrev = () => {
-        setCurrentStep((prev) => Math.max(prev - 1, 0));
-    };
+      console.log("Submitting payload:", payload);
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-blue-50 flex items-center justify-center p-4">
-            <div className="w-full max-w-2xl">
-                {/* App logo */}
-                <div className="flex justify-center mb-6">
-                    <div className="h-12 w-12 bg-emerald-600 rounded-lg flex items-center justify-center shadow-lg">
-                        <span className="text-white font-bold text-xl">D</span>
-                    </div>
-                </div>
-                
-                {/* Main card */}
-                <motion.div 
-                    className="bg-white rounded-2xl shadow-xl overflow-hidden"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.4 }}
-                >
-                    {/* Header with progress indicator */}
-                    <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 p-6">
-                        <h1 className="text-white text-2xl font-bold mb-2">Complete Your Profile</h1>
-                        <p className="text-emerald-100 text-sm mb-4">
-                            Step {currentStep + 1} of {steps.length}: {steps[currentStep]}
-                        </p>
-                        
-                        {/* Progress bar */}
-                        <div className="h-1.5 bg-emerald-300/30 rounded-full overflow-hidden">
-                            <div 
-                                className="h-full bg-white transition-all duration-300 ease-out"
-                                style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-                            ></div>
-                        </div>
-                    </div>
-                    
-                    {/* Form content */}
-                    <div className="p-6">
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={currentStep}
-                                initial={{ opacity: 0, x: 10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -10 }}
-                                transition={{ duration: 0.3 }}
-                                className="min-h-[300px]"
-                            >
-                                {currentStep === 0 && <PersonalInfoStep form={form} />}
-                                {currentStep === 1 && <PlanSelectionStep form={form} plans={plans} />}
-                                {currentStep === 2 && <ConfirmationStep formData={form.getValues()} />}
-                            </motion.div>
-                        </AnimatePresence>
-                    </div>
-                    
-                    {/* Navigation buttons */}
-                    <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-between">
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            onClick={handlePrev}
-                            disabled={currentStep === 0}
-                            className="text-gray-600"
-                        >
-                            {currentStep > 0 && (
-                                <div className="flex items-center">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
-                                        <path d="m15 18-6-6 6-6"/>
-                                    </svg>
-                                    Back
-                                </div>
-                            )}
-                        </Button>
-                        
-                        {currentStep === steps.length - 1 ? (
-                            <Button 
-                                type="button" 
-                                onClick={handleSubmit(onSubmit)}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6"
-                            >
-                                Complete Profile
-                            </Button>
-                        ) : (
-                            <Button 
-                                type="button" 
-                                onClick={handleNext}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6"
-                            >
-                                Continue
-                            </Button>
-                        )}
-                    </div>
-                </motion.div>
-                
-                {/* Footer text */}
-                <p className="text-center text-gray-500 text-xs mt-4">
-                    Your data is securely stored and will only be used to personalize your experience
-                </p>
+      // Send data to API
+      const response = await fetch('/api/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        cache: 'no-store', // Prevent caching
+      });
+
+      let responseData;
+      try {
+        responseData = await response.json();
+      } catch (e) {
+        console.error("Failed to parse response:", e);
+        throw new Error("Failed to parse server response");
+      }
+      
+      console.log("API response:", responseData);
+      
+      if (!response.ok) {
+        console.error("API error:", responseData);
+        throw new Error(responseData.error || 'Failed to save onboarding data');
+      }
+
+      // Update the session
+      try {
+        await update();
+        console.log("Session updated successfully");
+      } catch (updateError) {
+        console.error("Failed to update session:", updateError);
+        // Continue anyway, as the data is saved to the database
+      }
+      
+      // Redirect to dashboard
+      router.push('/dashboard');
+      
+    } catch (error) {
+      console.error("Form submission error:", error);
+      if (error instanceof z.ZodError) {
+        // Handle validation errors
+        const newErrors: Record<string, string> = {};
+        error.errors.forEach(err => {
+          const fieldName = err.path[0].toString();
+          newErrors[fieldName] = err.message;
+        });
+        setErrors(newErrors);
+      } else {
+        // Handle other errors
+        setSubmitError(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Calculate progress percentage
+  const progressValue = (currentStep / steps.length) * 100;
+
+  // Render form fields based on current step
+  const renderStepFields = () => {
+    switch (currentStep) {
+      case 1:
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="name" className="block text-sm font-medium">
+                Name
+              </label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-md"
+                placeholder="Your name"
+              />
+              {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
             </div>
+
+            <div className="space-y-2">
+              <label htmlFor="weight" className="block text-sm font-medium">
+                Weight (kg)
+              </label>
+              <input
+                id="weight"
+                name="weight"
+                type="number"
+                value={formData.weight}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-md"
+                placeholder="Your weight in kg"
+                step="0.1"
+              />
+              {errors.weight && <p className="text-red-500 text-sm">{errors.weight}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="height" className="block text-sm font-medium">
+                Height (cm)
+              </label>
+              <input
+                id="height"
+                name="height"
+                type="number"
+                value={formData.height}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-md"
+                placeholder="Your height in cm"
+                step="0.1"
+              />
+              {errors.height && <p className="text-red-500 text-sm">{errors.height}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="age" className="block text-sm font-medium">
+                Age
+              </label>
+              <input
+                id="age"
+                name="age"
+                type="number"
+                value={formData.age}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-md"
+                placeholder="Your age"
+              />
+              {errors.age && <p className="text-red-500 text-sm">{errors.age}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="gender" className="block text-sm font-medium">
+                Gender
+              </label>
+              <select
+                id="gender"
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-md"
+              >
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Other</option>
+                <option value="PREFER_NOT_TO_SAY">Prefer not to say</option>
+              </select>
+              {errors.gender && <p className="text-red-500 text-sm">{errors.gender}</p>}
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="activityLevel" className="block text-sm font-medium">
+                Activity Level
+              </label>
+              <select
+                id="activityLevel"
+                name="activityLevel"
+                value={formData.activityLevel}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-md"
+              >
+                <option value="SEDENTARY">Sedentary (little or no exercise)</option>
+                <option value="LIGHTLY_ACTIVE">Lightly active (light exercise 1-3 days/week)</option>
+                <option value="MODERATELY_ACTIVE">Moderately active (moderate exercise 3-5 days/week)</option>
+                <option value="VERY_ACTIVE">Very active (hard exercise 6-7 days/week)</option>
+                <option value="EXTRA_ACTIVE">Extra active (very hard exercise & physical job)</option>
+              </select>
+              {errors.activityLevel && <p className="text-red-500 text-sm">{errors.activityLevel}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="goal" className="block text-sm font-medium">
+                Your Goal
+              </label>
+              <select
+                id="goal"
+                name="goal"
+                value={formData.goal}
+                onChange={handleChange}
+                className="w-full p-2 border rounded-md"
+              >
+                <option value="WEIGHT_LOSS">Weight Loss</option>
+                <option value="WEIGHT_GAIN">Weight Gain</option>
+                <option value="MAINTENANCE">Maintenance</option>
+                <option value="MUSCLE_GAIN">Muscle Gain</option>
+              </select>
+              {errors.goal && <p className="text-red-500 text-sm">{errors.goal}</p>}
+            </div>
+          </div>
+        );
+
+      case 3:
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Please review your information</h3>
+            <div className="bg-gray-50 p-4 rounded-md space-y-2">
+              <p><strong>Name:</strong> {formData.name}</p>
+              <p><strong>Weight:</strong> {formData.weight ? `${formData.weight} kg` : 'Not provided'}</p>
+              <p><strong>Height:</strong> {formData.height ? `${formData.height} cm` : 'Not provided'}</p>
+              <p><strong>Age:</strong> {formData.age || 'Not provided'}</p>
+              <p><strong>Gender:</strong> {formData.gender.replace('_', ' ').toLowerCase()}</p>
+              <p><strong>Activity Level:</strong> {formData.activityLevel.replace('_', ' ').toLowerCase()}</p>
+              <p><strong>Goal:</strong> {formData.goal.replace('_', ' ').toLowerCase()}</p>
+            </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  return (
+    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-white to-blue-50 p-4">
+      <div className="w-full max-w-2xl bg-white rounded-lg shadow-xl overflow-hidden">
+        <div className="p-6">
+          <h2 className="text-2xl font-bold text-center mb-6">Welcome! Let's get you set up.</h2>
+          
+          {/* Progress bar */}
+          <div className="w-full bg-gray-200 rounded-full h-2.5 mb-6">
+            <div 
+              className="bg-blue-600 h-2.5 rounded-full transition-all duration-300" 
+              style={{ width: `${progressValue}%` }}
+            ></div>
+          </div>
+          
+          <p className="text-center text-sm text-gray-500 mb-6">
+            Step {currentStep} of {steps.length}: {steps[currentStep - 1].title}
+          </p>
+          
+          {/* Form fields */}
+          <div className="mb-8">
+            {renderStepFields()}
+          </div>
+          
+          {/* Display submit error if any */}
+          {submitError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-md">
+              {submitError}
+            </div>
+          )}
+          
+          {/* Navigation buttons */}
+          <div className="flex justify-between pt-4 border-t">
+            <button
+              type="button"
+              onClick={handleBack}
+              disabled={currentStep === 1 || isLoading}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 disabled:opacity-50"
+            >
+              Back
+            </button>
+            
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={isLoading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              {isLoading ? 'Processing...' : currentStep === steps.length ? 'Finish Setup' : 'Next'}
+            </button>
+          </div>
         </div>
-    );
+      </div>
+    </div>
+  );
 }

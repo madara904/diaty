@@ -3,6 +3,7 @@
 import React, { useState, useCallback, useEffect } from 'react'
 import { format, addDays, subDays } from 'date-fns'
 import { ChevronLeft, ChevronRight, History, TrendingUp, Settings, Utensils, Calendar as CalendarIcon, ArrowRight, User, Plus, Coffee, Moon, LightbulbIcon } from 'lucide-react'
+import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from "@/app/components/ui/card"
 import { Button } from "@/app/components/ui/Button"
 import { Progress } from "@/app/components/ui/progress"
@@ -14,10 +15,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Session } from 'next-auth'
 import { Plan } from '@/types/plan'
 import { capitalizeFirstLetter, cn } from '@/lib/utils'
-import { Toaster } from "@/app/components/ui/toaster"
 import { useKeyboardNavigation } from '@/lib/hooks/use-date-navigation'
-import useSWR, { preload, useSWRConfig } from 'swr'
-import Link from 'next/link'
+import useSWR, { preload } from 'swr'
 import FoodSearchModal from './FoodSearchModal'
 
 interface NutritionData {
@@ -92,11 +91,10 @@ const preloadAdjacentDates = (date: Date) => {
 
 export default function Overview({ user, plan, initialNutritionData }: OverviewProps) {
   const [currentDate, setCurrentDate] = useState<Date>(new Date())
+  const [direction, setDirection] = useState<number>(1) // 1 for right, -1 for left
   const [popoverOpen, setPopoverOpen] = useState(false)
-  const [direction, setDirection] = useState(0)
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [foodModalOpen, setFoodModalOpen] = useState(false)
-  const [selectedMealType, setSelectedMealType] = useState<"BREAKFAST" | "LUNCH" | "DINNER">("BREAKFAST")
+  const [selectedMealType, setSelectedMealType] = useState<MealType>("BREAKFAST")
 
   const { data: nutritionData, mutate: mutateNutritionData } = useSWR<NutritionData>(
     `/api/nutrition-data?date=${format(currentDate, "yyyy-MM-dd")}`,
@@ -115,7 +113,7 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
   const changeDate = (days: number) => {
     const newDate = days > 0 ? addDays(currentDate, 1) : subDays(currentDate, 1)
     setCurrentDate(newDate)
-    setDirection(days)
+    setDirection(days > 0 ? 1 : -1)
   }
 
   useKeyboardNavigation(changeDate)
@@ -125,7 +123,6 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
       if (date) {
         setDirection(date > currentDate ? 1 : -1)
         setCurrentDate(date)
-        setSelectedDate(date) // Update selectedDate when currentDate changes
         preloadAdjacentDates(date)
       }
       setPopoverOpen(false)
@@ -140,8 +137,11 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
   const totalCalories = nutritionData?.totalNutrition.calories || 0
   const totalNutrition = nutritionData?.totalNutrition || { calories: 0, carbs: 0, proteins: 0, fats: 0 }
 
-  const gaugeColor = totalCalories > (plan?.dailyCalories ?? 0) ? "text-destructive" : "text-primary"
-  const remainingCalories = (plan?.dailyCalories ?? 0) - totalCalories
+  // Get target calories from plan, with fallback to user's targetCalories if available
+  const targetCalories = plan?.dailyCalories || user?.targetCalories || 2000;
+  
+  const gaugeColor = totalCalories > targetCalories ? "text-destructive" : "text-primary"
+  const remainingCalories = targetCalories - totalCalories
 
   const calculateMealCalories = useCallback(
     (mealType: MealType) => {
@@ -158,47 +158,42 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
 
   const nutritionTips = [
     {
-      title: "Balanced Diet",
-      description: "Aim for a variety of fruits, vegetables, whole grains, and lean proteins.",
+      title: `Tips for ${user?.goal?.replace('_', ' ').toLowerCase() || 'healthy eating'}`,
+      description: user?.goal === 'WEIGHT_LOSS' 
+        ? "Focus on high-protein, low-calorie foods like lean meats, eggs, and leafy greens to stay full longer."
+        : user?.goal === 'WEIGHT_GAIN' 
+        ? "Include calorie-dense foods like nuts, avocados, and healthy oils to boost your daily intake."
+        : user?.goal === 'MUSCLE_GAIN'
+        ? "Aim for 1.6-2.2g of protein per kg of bodyweight and time protein intake around workouts."
+        : "Balance your plate with 50% vegetables, 25% protein, and 25% whole grains for optimal nutrition.",
       icon: LightbulbIcon,
       bgColor: "bg-blue-100",
     },
     {
-      title: "Stay Hydrated",
-      description: "Drink at least 8 glasses of water per day.",
+      title: "Timing Matters",
+      description: "Try to eat your last meal at least 3 hours before bedtime to improve sleep quality and digestion.",
       icon: LightbulbIcon,
       bgColor: "bg-green-100",
     },
     {
-      title: "Healthy Fats",
-      description: "Include avocados, nuts, and olive oil in your diet.",
+      title: "Smart Swaps",
+      description: "Replace sugary drinks with water, soda with sparkling water, or white bread with whole grain options.",
       icon: LightbulbIcon,
       bgColor: "bg-yellow-100",
     },
     {
-      title: "Portion Control",
-      description: "Use smaller plates to help control portion sizes.",
+      title: "Weekly Meal Prep",
+      description: "Spend 1-2 hours on weekends preparing healthy meals to save time and avoid unhealthy choices.",
       icon: LightbulbIcon,
       bgColor: "bg-purple-100",
     },
+    {
+      title: "80/20 Rule",
+      description: "Aim to eat nutritious foods 80% of the time, allowing yourself treats for the other 20%.",
+      icon: LightbulbIcon,
+      bgColor: "bg-pink-100",
+    },
   ]
-
-  const optimisticUpdateNutritionData = (newData: Partial<NutritionData>) => {
-    mutateNutritionData((currentData) => {
-      if (!currentData) return currentData
-      return {
-        ...currentData,
-        totalNutrition: {
-          ...currentData.totalNutrition,
-          ...newData.totalNutrition,
-        },
-        meals: {
-          ...currentData.meals,
-          ...newData.meals,
-        },
-      }
-    }, false)
-  }
 
   return (
     <div className={cn("bg-background text-foreground")}>
@@ -258,12 +253,12 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
                     <TabsContent value="calories">
                       <div className="flex items-center justify-center space-x-6">
                         <div className="text-center">
-                          <div className="sm:text-2xl font-bold">{plan?.dailyCalories ?? 0}</div>
+                          <div className="sm:text-2xl font-bold">{targetCalories}</div>
                           <div className="text-sm text-muted-foreground">Target</div>
                         </div>
                         <CalorieGauge
                           consumed={totalCalories}
-                          target={plan?.dailyCalories ?? 0}
+                          target={targetCalories}
                           gaugeColor={gaugeColor}
                           remainingCalories={remainingCalories}
                         />
@@ -321,27 +316,75 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
-                <Button variant="outline" className="w-full justify-between">
+                <Link href="/dashboard/profile" className="block">
+                  <Button variant="outline" className="w-full justify-between">
+                    <span className="flex items-center">
+                      <User className="mr-2 h-4 w-4" />
+                      Update Profile
+                    </span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-between"
+                  onClick={() => {
+                    // Set date to tomorrow
+                    setCurrentDate(addDays(currentDate, 1));
+                  }}
+                >
                   <span className="flex items-center">
-                    <History className="mr-2 h-4 w-4" />
-                    View History
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    Plan Tomorrow
                   </span>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" className="w-full justify-between">
+                <Button 
+                  variant="outline" 
+                  className="w-full justify-between"
+                >
                   <span className="flex items-center">
                     <TrendingUp className="mr-2 h-4 w-4" />
-                    Progress Report
+                    Weekly Summary
                   </span>
                   <ArrowRight className="h-4 w-4" />
                 </Button>
-                <Button variant="outline" className="w-full justify-between">
-                  <span className="flex items-center">
-                    <Settings className="mr-2 h-4 w-4" />
-                    Adjust Plan
-                  </span>
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
+                {user?.goal === 'WEIGHT_LOSS' && (
+                  <Button variant="outline" className="w-full justify-between">
+                    <span className="flex items-center">
+                      <TrendingUp className="mr-2 h-4 w-4" />
+                      Weight Loss Tips
+                    </span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                )}
+                {user?.goal === 'WEIGHT_GAIN' && (
+                  <Button variant="outline" className="w-full justify-between">
+                    <span className="flex items-center">
+                      <TrendingUp className="mr-2 h-4 w-4" />
+                      Weight Gain Tips
+                    </span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                )}
+                {user?.goal === 'MUSCLE_GAIN' && (
+                  <Button variant="outline" className="w-full justify-between">
+                    <span className="flex items-center">
+                      <TrendingUp className="mr-2 h-4 w-4" />
+                      Muscle Building Tips
+                    </span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                )}
+                {user?.goal === 'MAINTENANCE' && (
+                  <Button variant="outline" className="w-full justify-between">
+                    <span className="flex items-center">
+                      <TrendingUp className="mr-2 h-4 w-4" />
+                      Maintenance Tips
+                    </span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                )}
               </CardContent>
             </Card>
             <Card className="md:col-span-2">
@@ -354,7 +397,7 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
                     <CarouselContent>
                       {nutritionTips.map((tip, index) => (
                         <CarouselItem key={index}>
-                          <Card className={`${tip.bgColor} border-none shadow-none`}>
+                          <Card className={tip.bgColor}>
                             <CardContent className="flex flex-col items-center p-6">
                               <tip.icon className="h-12 w-12 text-muted-foreground mb-4" />
                               <h3 className="text-lg font-semibold mb-2 text-muted-foreground">{tip.title}</h3>
@@ -373,8 +416,6 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
           </div>
         </AnimatedDateContent>
       </AnimatePresence>
-      {/* Food intake tracker is now a separate page */}
-      <Toaster />
       <FoodSearchModal
         isOpen={foodModalOpen}
         onClose={() => setFoodModalOpen(false)}

@@ -19,14 +19,11 @@ const Onboarding = async () => {
       redirect("/dashboard/profile")
     }
     
-
     const plans = await fetchAvailablePlans();
     const planNames = plans.map(plan => ({ id: plan.id, name: plan.name }));
 
     return (
-        <>
-            <OnboardingForm plans={planNames} />
-        </>
+        <OnboardingForm plans={planNames} />
     );
 };
 

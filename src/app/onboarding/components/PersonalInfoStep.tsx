@@ -3,6 +3,7 @@ import { UseFormReturn } from 'react-hook-form';
 import { Input } from "@/app/components/ui/input";
 import { Label } from "@/app/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/app/components/ui/radio-group";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/app/components/ui/select";
 
 interface PersonalInfoStepProps {
     form: UseFormReturn<{ 
@@ -10,12 +11,13 @@ interface PersonalInfoStepProps {
         height: string; 
         age: string; 
         gender: 'male' | 'female' | 'other'; 
+        activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
         plan: 'Fitness' | 'Weight Gainer' | 'Weight Loss';
     }>;
 }
 
 const PersonalInfoStep: FC<PersonalInfoStepProps> = ({ form }) => {
-    const { register, formState: { errors } } = form;
+    const { register, formState: { errors }, control, setValue } = form;
 
     return (
         <div className="space-y-6 p-6 rounded-2xl bg-gradient-to-br from-[#f3fff6] to-[#e9f7ff] shadow-md">
@@ -41,6 +43,7 @@ const PersonalInfoStep: FC<PersonalInfoStepProps> = ({ form }) => {
                     {errors.age && <p className="text-red-500 text-xs mt-1">{errors.age.message}</p>}
                 </div>
             </div>
+            
             <div className="mt-8">
                 <Label className="block mb-3 text-lg text-center">Gender</Label>
                 <RadioGroup
@@ -62,6 +65,28 @@ const PersonalInfoStep: FC<PersonalInfoStepProps> = ({ form }) => {
                     ))}
                 </RadioGroup>
                 {errors.gender && <p className="text-red-500 text-xs mt-1 text-center">{errors.gender.message}</p>}
+            </div>
+
+            <div className="mt-8">
+                <Label htmlFor="activityLevel" className="block mb-3 text-lg text-center">Activity Level</Label>
+                <div className="bg-white rounded-xl p-5 shadow">
+                    <Select 
+                        onValueChange={(value) => form.setValue('activityLevel', value as 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active')}
+                        value={form.getValues('activityLevel')}
+                    >
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select your activity level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="sedentary">Sedentary (little or no exercise)</SelectItem>
+                            <SelectItem value="light">Light (exercise 1-3 days/week)</SelectItem>
+                            <SelectItem value="moderate">Moderate (exercise 3-5 days/week)</SelectItem>
+                            <SelectItem value="active">Active (exercise 6-7 days/week)</SelectItem>
+                            <SelectItem value="very_active">Very Active (intense exercise daily)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    {errors.activityLevel && <p className="text-red-500 text-xs mt-1">{errors.activityLevel.message}</p>}
+                </div>
             </div>
         </div>
     );

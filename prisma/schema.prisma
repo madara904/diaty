@@ -21,6 +21,8 @@ model User {
   age           Int?           // Added age
   gender        String?        // Added gender
   activityLevel String?        // Added activity level
+  goal          String?        // Added goal (WEIGHT_LOSS, WEIGHT_GAIN, MAINTENANCE, MUSCLE_GAIN)
+  targetCalories Int?          // Added target calories based on user data
   completeFlag  Boolean         @default(false) // New field to track profile completion
   accounts      Account[]
   sessions      Session[]

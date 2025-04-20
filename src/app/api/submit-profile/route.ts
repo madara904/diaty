@@ -9,9 +9,9 @@ export async function POST(req: NextRequest) {
     const user = session?.user;
 
     const body = await req.json();
-    const { weight, height, age, gender, plan } = body;
+    const { weight, height, age, gender, activityLevel, plan } = body;
 
-    if (!user || !weight || !height || !age || !gender || !plan) {
+    if (!user || !weight || !height || !age || !gender || !activityLevel || !plan) {
       return NextResponse.json({ error: "Invalid input" }, { status: 400 });
     }
 
@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
         height: parseFloat(height),
         age: parseInt(age),
         gender,
+        activityLevel,
         completeFlag: true,
       },
     });

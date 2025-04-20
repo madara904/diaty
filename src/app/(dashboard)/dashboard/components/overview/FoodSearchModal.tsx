@@ -103,20 +103,30 @@ export default function FoodSearchModal({
   
   // Use SWR for fetching recent food items
   const formattedDate = format(currentDate, "yyyy-MM-dd");
+  // Don't filter by meal type in the URL to get all recent items
   const recentItemsUrl = `/api/nutrition-data/recent?limit=10&date=${formattedDate}`;
   
-  const { data: recentItems, isLoading: isLoadingRecent } = useSWR(
+  const { data: recentItems, isLoading: isLoadingRecent, mutate: mutateRecentItems } = useSWR(
     isOpen ? recentItemsUrl : null,
     async (url) => {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch recent items');
+      try {
+        console.log("Fetching recent items from:", url);
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error('Failed to fetch recent items');
+        }
+        const data = await response.json();
+        console.log("Fetched recent items:", data);
+        return data;
+      } catch (error) {
+        console.error("Error fetching recent items:", error);
+        return [];
       }
-      return response.json();
     },
     {
       revalidateOnFocus: false,
-      dedupingInterval: 5000,
+      dedupingInterval: 1000, // Shorter deduping interval
+      revalidateOnMount: true,
     }
   );
 
@@ -258,7 +268,7 @@ export default function FoodSearchModal({
       })
       
       // Revalidate data with SWR
-      mutate(recentItemsUrl);
+      mutateRecentItems();
       
       // Call the onFoodAdded callback to refresh the dashboard
       onFoodAdded()
@@ -319,7 +329,8 @@ export default function FoodSearchModal({
       form.reset()
       
       // Revalidate SWR cache
-      mutate(recentItemsUrl);
+      console.log("Food added/updated, refreshing data");
+      await mutateRecentItems();
       
       // Always call onFoodAdded to refresh the dashboard
       onFoodAdded()
@@ -370,8 +381,12 @@ export default function FoodSearchModal({
       setSearchQuery("")
       setSelectedFood(null)
       setGrams(100)
+    } else {
+      // Force revalidation when modal opens
+      console.log("Modal opened, fetching recent items");
+      mutateRecentItems();
     }
-  }, [isOpen])
+  }, [isOpen, mutateRecentItems])
 
   // When form values change (e.g., when switching forms), ensure date is updated
   useEffect(() => {
@@ -380,13 +395,14 @@ export default function FoodSearchModal({
     
     // Revalidate the recent items data when the date changes
     if (isOpen) {
-      mutate(recentItemsUrl);
+      console.log("Date or meal type changed, fetching recent items");
+      mutateRecentItems();
     }
-  }, [currentDate, form, recentItemsUrl, isOpen]);
+  }, [currentDate, form, mutateRecentItems, isOpen, defaultMealType]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         {view === "search" && (
           <>
             <DialogHeader>
@@ -430,7 +446,7 @@ export default function FoodSearchModal({
                 ) : recentItems && recentItems.length > 0 ? (
                   <div className="space-y-2">
                     {recentItems.map((item: SavedFoodItem) => (
-                      <Card key={item.id} className="hover:bg-accent/50 transition-colors">
+                      <Card key={item.id}>
                         <CardContent className="p-3">
                           <div className="flex justify-between items-center">
                             <div className="cursor-pointer" onClick={() => handleSelectFood(item)}>
@@ -485,8 +501,8 @@ export default function FoodSearchModal({
                         <div className="space-y-2">
                           <h3 className="text-sm font-medium">Search Results - External Foods</h3>
                           {openFoodResults.slice(0, 5).map((product, index) => (
-                            <Card key={`open-${index}`} className="cursor-pointer hover:bg-accent/50 transition-colors">
-                              <CardContent className="p-3" onClick={() => handleSelectFood(product)}>
+                            <Card key={`open-${index}`}>
+                              <CardContent className="p-3 cursor-pointer" onClick={() => handleSelectFood(product)}>
                                 <div className="flex justify-between items-center">
                                   <div>
                                     <h4 className="font-medium">{product.product_name}</h4>
@@ -510,8 +526,8 @@ export default function FoodSearchModal({
                         <div className="space-y-2">
                           <h3 className="text-sm font-medium">Search Results - Saved Foods</h3>
                           {savedFoodResults.map((item, idx) => (
-                            <Card key={`saved-${idx}`} className="cursor-pointer hover:bg-accent/50 transition-colors">
-                              <CardContent className="p-3" onClick={() => handleSelectFood(item)}>
+                            <Card key={`saved-${idx}`}>
+                              <CardContent className="p-3 cursor-pointer" onClick={() => handleSelectFood(item)}>
                                 <div className="flex justify-between items-center">
                                   <div>
                                     <h4 className="font-medium">{item.name}</h4>
@@ -612,7 +628,14 @@ export default function FoodSearchModal({
                       <FormItem>
                         <FormLabel>Calories</FormLabel>
                         <FormControl>
-                          <Input {...field} type="number" min={0} step={0.1} />
+                          <Input 
+                            {...field} 
+                            type="number" 
+                            min={0} 
+                            step={0.1} 
+                            disabled={view === "detail" && selectedFood !== null} 
+                            className="bg-muted"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -626,7 +649,14 @@ export default function FoodSearchModal({
                       <FormItem>
                         <FormLabel>Carbs (g)</FormLabel>
                         <FormControl>
-                          <Input {...field} type="number" min={0} step={0.1} />
+                          <Input 
+                            {...field} 
+                            type="number" 
+                            min={0} 
+                            step={0.1} 
+                            disabled={view === "detail" && selectedFood !== null} 
+                            className="bg-muted"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -640,7 +670,14 @@ export default function FoodSearchModal({
                       <FormItem>
                         <FormLabel>Proteins (g)</FormLabel>
                         <FormControl>
-                          <Input {...field} type="number" min={0} step={0.1} />
+                          <Input 
+                            {...field} 
+                            type="number" 
+                            min={0} 
+                            step={0.1} 
+                            disabled={view === "detail" && selectedFood !== null} 
+                            className="bg-muted"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -654,12 +691,25 @@ export default function FoodSearchModal({
                       <FormItem>
                         <FormLabel>Fats (g)</FormLabel>
                         <FormControl>
-                          <Input {...field} type="number" min={0} step={0.1} />
+                          <Input 
+                            {...field} 
+                            type="number" 
+                            min={0} 
+                            step={0.1} 
+                            disabled={view === "detail" && selectedFood !== null} 
+                            className="bg-muted"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                </div>
+                
+                <div className="text-sm text-muted-foreground mt-2">
+                  {view === "detail" && selectedFood && (
+                    <p className="italic">Only serving size can be adjusted. Nutritional values will scale automatically.</p>
+                  )}
                 </div>
                 
                 <DialogFooter>

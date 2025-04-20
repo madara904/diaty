@@ -9,6 +9,7 @@ interface PlanSelectionStepProps {
         height: string;
         age: string;
         gender: 'male' | 'female' | 'other';
+        activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'very_active';
         plan: 'Fitness' | 'Weight Gainer' | 'Weight Loss';
     }>;
     plans: { id: string; name: string }[];
@@ -58,20 +59,20 @@ const PlanSelectionStep: FC<PlanSelectionStepProps> = ({ form, plans }) => {
                         >
                             <RadioGroupItem value={plan.name} id={plan.id} className="sr-only" />
                             <div className="flex flex-col items-center space-y-3">
-                                {/* Example icons - replace with your own or use lucide-react */}
+                                {/* Plan icons */}
                                 {plan.name === 'Fitness' && (
-                                    <span className="bg-primary/10 rounded-full p-3 mb-2"><svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="16" cy="16" r="12" /><path d="M12 20l8-8M12 12h8v8" /></svg></span>
+                                    <span className="bg-blue-100 rounded-full p-3 mb-2 text-blue-600"><svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="16" cy="16" r="12" /><path d="M12 20l8-8M12 12h8v8" /></svg></span>
                                 )}
                                 {plan.name === 'Weight Gainer' && (
-                                    <span className="bg-green-200/40 rounded-full p-3 mb-2"><svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2"><rect x="8" y="8" width="16" height="16" rx="4" /><path d="M16 12v8M12 16h8" /></svg></span>
+                                    <span className="bg-green-100 rounded-full p-3 mb-2 text-green-600"><svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2"><rect x="8" y="8" width="16" height="16" rx="4" /><path d="M16 12v8M12 16h8" /></svg></span>
                                 )}
                                 {plan.name === 'Weight Loss' && (
-                                    <span className="bg-red-200/40 rounded-full p-3 mb-2"><svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="16" cy="16" rx="12" ry="8" /><path d="M16 8v16" /></svg></span>
+                                    <span className="bg-red-100 rounded-full p-3 mb-2 text-red-600"><svg width="32" height="32" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="16" cy="16" rx="12" ry="8" /><path d="M16 8v16" /></svg></span>
                                 )}
                                 <span className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors">{plan.name}</span>
                             </div>
                             {form.getValues('plan') === plan.name && (
-                                <span className="absolute top-3 right-3 bg-primary text-white rounded-full p-1">
+                                <span className="absolute top-3 right-3 bg-blue-600 text-white rounded-full p-1">
                                     <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="5 11 9 15 15 7" /></svg>
                                 </span>
                             )}

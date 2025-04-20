@@ -1,6 +1,6 @@
 "use client"
 import { useSession } from "next-auth/react"
-import { BookAIcon, LayoutDashboard, Search, ChevronUp, User, Settings, LogOut, User2 } from "lucide-react"
+import { BookAIcon, LayoutDashboard, Search, ChevronUp, User, Settings, LogOut, User2, Moon, Sun } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/app/components/ui/avatar"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/app/components/ui/dropdown-menu"
@@ -18,6 +18,8 @@ import {
   useSidebar
 } from "@/app/components/ui/sidebar"
 import Link from "next/link"
+import { useTheme } from "next-themes"
+import { useState, useEffect } from "react"
 
 const items = [
   {
@@ -45,6 +47,13 @@ const items = [
 export function AppSidebar() {
   const { data: session } = useSession()
   const { state } = useSidebar()
+  const { resolvedTheme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  
+  // Only show theme toggle after hydration to avoid mismatch
+  useEffect(() => {
+    setMounted(true)
+  }, [])
   
   const userInitials = session?.user?.name
     ? session.user.name.split(' ').map(n => n[0]).join('').toUpperCase()
@@ -79,6 +88,23 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter>
         <SidebarMenu>
+          {mounted && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                size="default"
+                tooltip={state === "collapsed" ? "Toggle Theme" : undefined}
+                onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
+              >
+                <div className="flex items-center gap-2">
+                  {resolvedTheme === 'dark' ? 
+                    <Sun size={22} className="text-muted-foreground" /> : 
+                    <Moon size={22} className="text-muted-foreground" />
+                  }
+                  <span className="text-base font-medium">Toggle Theme</span>
+                </div>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -102,18 +128,6 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </DropdownMenuTrigger>
               <DropdownMenuContent side="top" align="start" className="w-[--radix-dropdown-menu-trigger-width]">
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/profile">
-                    <User className="mr-2 h-4 w-4" />
-                    <span>Profile</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard/settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Settings</span>
-                  </Link>
-                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/api/auth/signout">

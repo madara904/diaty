@@ -5,7 +5,6 @@ import React, { useEffect, useState, useCallback } from "react"
 import DashboardWrapper from "./components/DashboardWrapper"
 import { ErrorBoundary } from "react-error-boundary" 
 import { useSession } from "next-auth/react"
-import { User } from "next-auth"
 import { useRouter } from "next/navigation"
 
 // Define the Plan type
@@ -16,6 +15,21 @@ interface Plan {
   dailyCarbs: number
   dailyProteins: number
   dailyFats: number
+}
+
+// Define the User type with all required properties
+interface DashboardUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  onboardingComplete?: boolean;
+  weight?: number | null;
+  height?: number | null;
+  age?: number | null;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY' | null;
+  activityLevel?: 'SEDENTARY' | 'LIGHTLY_ACTIVE' | 'MODERATELY_ACTIVE' | 'VERY_ACTIVE' | 'EXTRA_ACTIVE' | null;
+  targetCalories?: number | null;
 }
 
 // Define the NutritionData type
@@ -86,7 +100,7 @@ export default function Dashboard() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [data, setData] = useState({
-    userData: undefined as User | undefined,
+    userData: undefined as DashboardUser | undefined,
     plan: null as Plan | null,
     nutritionData: null as NutritionData | null
   })
