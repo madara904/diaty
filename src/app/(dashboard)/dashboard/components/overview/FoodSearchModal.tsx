@@ -66,6 +66,7 @@ interface OpenFoodProduct {
     fat?: number
   }
   image_url?: string
+  brand?: string
 }
 
 interface SavedFoodItem {
@@ -83,6 +84,9 @@ interface SavedFoodItem {
   isOtherUserData: boolean
 }
 
+// Update the view type definition
+type ViewType = "search" | "detail" | "custom" | "edit";
+
 export default function FoodSearchModal({ 
   isOpen, 
   onClose, 
@@ -96,10 +100,13 @@ export default function FoodSearchModal({
   const [selectedFood, setSelectedFood] = useState<OpenFoodProduct | SavedFoodItem | null>(null)
   const [isSearching, setIsSearching] = useState(false)
   const [grams, setGrams] = useState(100)
-  const [view, setView] = useState<"search" | "detail" | "custom" | "edit">("search")
+  const [view, setView] = useState<ViewType>("search")
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [searchError, setSearchError] = useState("")
   const { toast } = useToast()
+  const [communityResults, setCommunityResults] = useState<SavedFoodItem[]>([])
+  const [showSuccess, setShowSuccess] = useState(false);
   
   // Use SWR for fetching recent food items
   const formattedDate = format(currentDate, "yyyy-MM-dd");
@@ -116,7 +123,8 @@ export default function FoodSearchModal({
     },
     {
       revalidateOnFocus: false,
-      dedupingInterval: 5000,
+      dedupingInterval: 60000, // 1 minute
+      revalidateIfStale: false,
     }
   );
 
@@ -134,42 +142,54 @@ export default function FoodSearchModal({
     },
   })
 
+  const fetchOpenFoodFacts = async (query: string) => {
+    const response = await fetch(`/api/search-food?productName=${encodeURIComponent(query)}`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data.products || [];
+  };
+
+  const fetchCommunityFoods = async (query: string) => {
+    const response = await fetch(`/api/shared-nutrition?query=${encodeURIComponent(query)}&limit=10`);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  };
+
   // Handle searching for foods
   const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!searchQuery.trim()) return
-    
-    setIsSearching(true)
-    
+    e.preventDefault();
+    if (!searchQuery.trim()) return;
+
+    setIsSearching(true);
+    setOpenFoodResults([]);
+    setCommunityResults([]);
+    setSearchError("");
+
     try {
-      // Search OpenFood API
-      const openFoodRes = await fetch(`/api/search-food?productName=${encodeURIComponent(searchQuery)}`)
-      const openFoodData = await openFoodRes.json()
-      
-      if (openFoodRes.ok && openFoodData.products) {
-        setOpenFoodResults(openFoodData.products)
-      } else {
-        setOpenFoodResults([])
+      const [openFoodData, communityData] = await Promise.all([
+        fetchOpenFoodFacts(searchQuery),
+        fetchCommunityFoods(searchQuery),
+      ]);
+
+      setOpenFoodResults(openFoodData);
+      setCommunityResults(communityData);
+
+      if (openFoodData.length === 0 && communityData.length === 0) {
+        setSearchError("No results found.");
       }
-      
-      // Search saved foods in our database
-      const savedFoodRes = await fetch(`/api/shared-nutrition?query=${encodeURIComponent(searchQuery)}`)
-      const savedFoodData = await savedFoodRes.json()
-      
-      if (savedFoodRes.ok) {
-        setSavedFoodResults(savedFoodData)
-      } else {
-        setSavedFoodResults([])
-      }
-      
-      // Removed all toast notifications related to searching
     } catch (err) {
-      console.error("Error searching for food:", err)
-      // Removed toast notification for search errors
+      setSearchError("An error occurred while searching.");
+      setOpenFoodResults([]);
+      setCommunityResults([]);
     } finally {
-      setIsSearching(false)
+      setIsSearching(false);
     }
-  }
+  };
   
   // Calculate nutrition based on grams
   const calculateNutrition = (value: number | undefined) => {
@@ -180,6 +200,7 @@ export default function FoodSearchModal({
   const handleSelectFood = (food: OpenFoodProduct | SavedFoodItem) => {
     setSelectedFood(food)
     setView("detail")
+    setGrams(100)
     
     if ('product_name' in food) {
       // OpenFood product
@@ -321,9 +342,24 @@ export default function FoodSearchModal({
       // Revalidate SWR cache
       mutate(recentItemsUrl);
       
-      // Always call onFoodAdded to refresh the dashboard
-      onFoodAdded()
-      onClose()
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setView("search");
+        setSearchQuery("");
+        setSelectedFood(null);
+        setGrams(100);
+        form.reset({
+          name: "",
+          calories: 0,
+          carbs: 0,
+          proteins: 0,
+          fats: 0,
+          mealType: defaultMealType,
+          date: format(currentDate, "yyyy-MM-dd"),
+        });
+        onFoodAdded();
+      }, 1200);
     } catch (error) {
       console.error("Error with food intake:", error)
       toast({
@@ -381,539 +417,510 @@ export default function FoodSearchModal({
     // Revalidate the recent items data when the date changes
     if (isOpen) {
       mutate(recentItemsUrl);
+      console.log("Fetching saved items for date:", formattedDate);
     }
-  }, [currentDate, form, recentItemsUrl, isOpen]);
+  }, [currentDate, form, isOpen, recentItemsUrl, mutate, formattedDate]);
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent>
-        {view === "search" && (
-          <>
-            <DialogHeader>
-              <DialogTitle>Add Food Intake</DialogTitle>
-              <DialogDescription>
-                Search for food or add a custom entry.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="space-y-4 mt-4">
-              <form onSubmit={handleSearch} className="flex gap-2">
-                <Input
-                  placeholder="Search for food..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1"
-                />
-                <Button type="submit" size="icon">
-                  {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                </Button>
-              </form>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
+        <div className="overflow-y-auto flex-1 p-6">
+          {view === "search" && (
+            <>
+              <DialogHeader className="mb-4">
+                <DialogTitle>Add Food Intake</DialogTitle>
+                <DialogDescription>
+                  Search for food or add a custom entry.
+                </DialogDescription>
+              </DialogHeader>
               
-              <div className="mt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={showCustomFoodForm}
-                  className="w-full flex items-center justify-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Custom Food
-                </Button>
-              </div>
-              
-              {/* Recent Items (always shown) */}
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium">Recently Added</h3>
-                {isLoadingRecent ? (
-                  <div className="flex justify-center items-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : recentItems && recentItems.length > 0 ? (
-                  <div className="space-y-2">
-                    {recentItems.map((item: SavedFoodItem) => (
-                      <Card key={item.id} className="hover:bg-accent/50 transition-colors">
-                        <CardContent className="p-3">
-                          <div className="flex justify-between items-center">
-                            <div className="cursor-pointer" onClick={() => handleSelectFood(item)}>
-                              <h4 className="font-medium">{item.name || "Unnamed Food"}</h4>
-                              <p className="text-sm text-muted-foreground">
-                                {item.calories} kcal • {format(new Date(item.date), "MMM d")}
-                              </p>
-                              <Badge variant="outline" className="mt-1">
-                                {item.mealType.charAt(0) + item.mealType.slice(1).toLowerCase()}
-                              </Badge>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button size="sm" variant="ghost" onClick={() => handleEditFood(item)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="ghost" 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteFood(item.id);
-                                }}
-                              >
-                                <Trash className="h-4 w-4" />
-                              </Button>
-                              <Button size="sm" variant="ghost" onClick={() => handleSelectFood(item)}>
-                                Select
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground py-8 text-center">
-                    Your recently added foods will appear here.
-                  </p>
-                )}
-              </div>
-              
-              {/* Search Results (shown only when searching) */}
-              {isSearching ? (
-                <div className="flex justify-center items-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <div className="space-y-4 mt-4">
+                <form onSubmit={handleSearch} className="flex gap-2">
+                  <Input
+                    placeholder="Search for food..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button 
+                    type="submit" 
+                    size="icon"
+                    disabled={isSearching}
+                  >
+                    {isSearching ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Search className="h-4 w-4" />
+                    )}
+                  </Button>
+                </form>
+                
+                <div className="mt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={showCustomFoodForm}
+                    className="w-full flex items-center justify-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Custom Food
+                  </Button>
                 </div>
-              ) : (
-                <>
+                
+                {/* Recent Items (always shown) */}
+                <div className="space-y-2">
+                  <h3 className="text-sm font-medium">Recently Added</h3>
+                  {isLoadingRecent ? (
+                    <div className="flex justify-center items-center py-8">
+                      <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+                    </div>
+                  ) : recentItems && recentItems.length > 0 ? (
+                    <div className="space-y-2">
+                      {recentItems.map((item: SavedFoodItem) => (
+                        <Card key={item.id} className="hover:bg-accent/50 transition-colors">
+                          <CardContent className="p-3">
+                            <div className="flex justify-between items-center">
+                              <div className="cursor-pointer" onClick={() => handleSelectFood(item)}>
+                                <h4 className="font-medium">{item.name || "Unnamed Food"}</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  {item.calories} kcal • {format(new Date(item.date), "MMM d")}
+                                </p>
+                                <Badge variant="outline" className="mt-1 bg-emerald-50 text-emerald-700 border-emerald-200">
+                                  {item.mealType.charAt(0) + item.mealType.slice(1).toLowerCase()}
+                                </Badge>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button size="sm" variant="ghost" onClick={() => handleEditFood(item)} className="hover:bg-accent">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="ghost" 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteFood(item.id);
+                                  }}
+                                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                                >
+                                  <Trash className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleSelectFood(item)}
+                                  className="text-emerald-600 border-emerald-300 hover:bg-accent/50 transition-colors"
+                                >
+                                  Select
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground py-8 text-center">
+                      Your recently added foods will appear here.
+                    </p>
+                  )}
+                </div>
+              
+                {/* Search Results (shown only when searching) */}
+                <div className="mt-4">
                   {searchQuery && (
                     <>
-                      {openFoodResults.length > 0 && (
-                        <div className="space-y-2">
-                          <h3 className="text-sm font-medium">Search Results - External Foods</h3>
-                          {openFoodResults.slice(0, 5).map((product, index) => (
-                            <Card key={`open-${index}`} className="cursor-pointer hover:bg-accent/50 transition-colors">
-                              <CardContent className="p-3" onClick={() => handleSelectFood(product)}>
-                                <div className="flex justify-between items-center">
-                                  <div>
-                                    <h4 className="font-medium">{product.product_name}</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                      {product.nutriments["energy-kcal_100g"] || 
-                                      product.nutriments["energy-kcal"] || 
-                                      (product.nutriments.energy ? (product.nutriments.energy / 4.184).toFixed(0) : 0)} kcal/100g
-                                    </p>
-                                  </div>
-                                  <Button size="sm" variant="ghost">
-                                    Select
-                                  </Button>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
+                      {isSearching ? (
+                        <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+                          <p className="text-sm text-muted-foreground text-center">
+                            Searching OpenFoodFacts database...<br />
+                            This may take a few seconds
+                          </p>
                         </div>
-                      )}
-                      
-                      {savedFoodResults.length > 0 && (
-                        <div className="space-y-2">
-                          <h3 className="text-sm font-medium">Search Results - Saved Foods</h3>
-                          {savedFoodResults.map((item, idx) => (
-                            <Card key={`saved-${idx}`} className="cursor-pointer hover:bg-accent/50 transition-colors">
-                              <CardContent className="p-3" onClick={() => handleSelectFood(item)}>
-                                <div className="flex justify-between items-center">
-                                  <div>
-                                    <h4 className="font-medium">{item.name}</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                      {item.calories} kcal | {item.carbs}g C | {item.proteins}g P | {item.fats}g F
-                                    </p>
-                                    <div className="flex gap-1 mt-1">
-                                      {item.isVerified && (
-                                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                                          Verified
-                                        </Badge>
-                                      )}
-                                      {item.isUserData && (
-                                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                                          Your Food
-                                        </Badge>
-                                      )}
-                                      {item.isOtherUserData && (
-                                        <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
-                                          Community
-                                        </Badge>
-                                      )}
-                                      {!item.isUserData && !item.isOtherUserData && !item.isVerified && (
-                                        <Badge variant="outline">
-                                          Database
-                                        </Badge>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <Button size="sm" variant="ghost">
-                                    Select
-                                  </Button>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))}
-                        </div>
-                      )}
-                      
-                      {openFoodResults.length === 0 && savedFoodResults.length === 0 && (
-                        <div className="py-8 text-center">
-                          <p className="text-muted-foreground">No results found</p>
-                          <Button variant="link" onClick={showCustomFoodForm}>
-                            Add as a custom food
-                          </Button>
-                        </div>
+                      ) : (
+                        <>
+                          {searchError && (
+                            <div className="py-8 text-center">
+                              <p className="text-muted-foreground">{searchError}</p>
+                              <Button variant="link" onClick={showCustomFoodForm}>
+                                Add as a custom food
+                              </Button>
+                            </div>
+                          )}
+                          {!searchError && (openFoodResults.length > 0 || communityResults.length > 0) && (
+                            <div className="space-y-2 mt-4">
+                              <h3 className="text-sm font-medium">Search Results</h3>
+                              {[...communityResults, ...openFoodResults].map((product, index) => {
+                                const isCommunity = (product as any).id !== undefined;
+                                return (
+                                  <Card key={isCommunity ? `community-${(product as SavedFoodItem).id}` : `open-${index}`} className="cursor-pointer hover:bg-accent/50 transition-colors">
+                                    <CardContent className="p-3" onClick={() => handleSelectFood(product)}>
+                                      <div className="flex justify-between items-center">
+                                        <div>
+                                          <h4 className="font-medium flex items-center gap-2">
+                                            {isCommunity ? (product as SavedFoodItem).name : (product as OpenFoodProduct).product_name}
+                                            {isCommunity && (
+                                              <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-200 ml-2">Community</Badge>
+                                            )}
+                                          </h4>
+                                          <p className="text-sm text-muted-foreground">
+                                            {isCommunity
+                                              ? null
+                                              : (product as OpenFoodProduct).brand && <span className="mr-2">{(product as OpenFoodProduct).brand}</span>}
+                                            <span className="font-medium">
+                                              {isCommunity
+                                                ? Math.round(Number((product as SavedFoodItem).calories))
+                                                : Math.round(Number((product as OpenFoodProduct).nutriments["energy-kcal_100g"]))} kcal/100g
+                                            </span>
+                                          </p>
+                                        </div>
+                                        <Button 
+                                          size="sm" 
+                                          variant="default"
+                                          className="border-emerald-300 hover:bg-emerald-600"
+                                        >
+                                          Select
+                                        </Button>
+                                      </div>
+                                    </CardContent>
+                                  </Card>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </>
                       )}
                     </>
                   )}
-                </>
-              )}
-            </div>
-          </>
-        )}
-        
-        {view === "detail" && selectedFood && (
-          <>
-            <DialogHeader>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setView("search")}
-                  className="h-8 w-8"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <div>
-                  <DialogTitle>
-                    {'product_name' in selectedFood 
-                      ? selectedFood.product_name 
-                      : selectedFood.name}
-                  </DialogTitle>
-                  <Badge className="mt-1">
-                    Adding to {defaultMealType.charAt(0) + defaultMealType.slice(1).toLowerCase()}
-                  </Badge>
                 </div>
               </div>
-            </DialogHeader>
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Serving Size (g)</Label>
-                  <Input
-                    type="number"
-                    value={grams}
-                    onChange={(e) => setGrams(parseInt(e.target.value) || 100)}
-                    min={1}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="calories"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Calories</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" min={0} step={0.1} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="carbs"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Carbs (g)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" min={0} step={0.1} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="proteins"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Proteins (g)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" min={0} step={0.1} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="fats"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fats (g)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" min={0} step={0.1} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <DialogFooter>
+            </>
+          )}
+          
+          {view === "detail" && selectedFood && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-2">
                   <Button 
-                    type="submit" 
-                    className="w-full"
-                    disabled={isSubmitting}
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setView("search")}
+                    className="h-8 w-8"
                   >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      'Add Food'
-                    )}
+                    <ArrowLeft className="h-4 w-4" />
                   </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </>
-        )}
-        
-        {view === "custom" && (
-          <>
-            <DialogHeader>
-              <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={() => setView("search")}
-                  className="h-8 w-8"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <div>
-                  <DialogTitle>Add Custom Food</DialogTitle>
-                  <Badge className="mt-1">
-                    Adding to {defaultMealType.charAt(0) + defaultMealType.slice(1).toLowerCase()}
-                  </Badge>
-                </div>
-              </div>
-            </DialogHeader>
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Food Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} placeholder="E.g., Chicken Salad" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="calories"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Calories</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" min={0} step={1} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="carbs"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Carbs (g)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" min={0} step={0.1} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="proteins"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Proteins (g)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" min={0} step={0.1} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="fats"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fats (g)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" min={0} step={0.1} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <DialogFooter>
-                  <Button 
-                    type="submit" 
-                    className="w-full"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      'Add to Tracker'
-                    )}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </>
-        )}
-        
-        {view === "edit" && (
-          <>
-            <DialogHeader>
-              <div className="flex items-center">
-                <Button variant="ghost" size="sm" className="mr-2" onClick={() => setView("search")}>
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <div>
-                  <DialogTitle>Edit Food</DialogTitle>
-                  <div className="flex items-center gap-2">
-                    <DialogDescription>
-                      Update the food information.
-                    </DialogDescription>
+                  <div>
+                    <DialogTitle>
+                      {'product_name' in selectedFood 
+                        ? selectedFood.product_name 
+                        : selectedFood.name}
+                    </DialogTitle>
                     <Badge className="mt-1">
-                      {defaultMealType.charAt(0) + defaultMealType.slice(1).toLowerCase()}
+                      Adding to {defaultMealType.charAt(0) + defaultMealType.slice(1).toLowerCase()}
                     </Badge>
                   </div>
                 </div>
-              </div>
-            </DialogHeader>
-            
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Food Name</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="calories"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Calories</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" min={0} step={1} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="carbs"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Carbs (g)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" min={0} step={0.1} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="proteins"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Proteins (g)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" min={0} step={0.1} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="fats"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Fats (g)</FormLabel>
-                        <FormControl>
-                          <Input {...field} type="number" min={0} step={0.1} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+              </DialogHeader>
+              
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Serving Size (g)</Label>
+                    <Input
+                      type="number"
+                      value={isNaN(grams) ? '' : grams}
+                      onChange={e => {
+                        const val = e.target.value;
+                        if (val === "" || isNaN(Number(val))) {
+                          setGrams(NaN);
+                        } else {
+                          setGrams(Number(val));
+                        }
+                      }}
+                      min={1}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label>Calories</Label>
+                      <div className="font-medium">{Math.round(Number(form.watch("calories")))} kcal</div>
+                    </div>
+                    <div>
+                      <Label>Carbs</Label>
+                      <div className="font-medium">{Math.round(Number(form.watch("carbs")))} g</div>
+                    </div>
+                    <div>
+                      <Label>Proteins</Label>
+                      <div className="font-medium">{Math.round(Number(form.watch("proteins")))} g</div>
+                    </div>
+                    <div>
+                      <Label>Fats</Label>
+                      <div className="font-medium">{Math.round(Number(form.watch("fats")))} g</div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        (view as string) === "edit"
+                          ? "Update Food"
+                          : (view as string) === "custom"
+                            ? "Add to Tracker"
+                            : "Add Food"
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+              {showSuccess && (
+                <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+                  <div className="bg-emerald-600/90 rounded-full p-6 animate-bounce-in">
+                    <svg width="48" height="48" fill="none" stroke="white" strokeWidth="3"><circle cx="24" cy="24" r="22"/><polyline points="16 26 22 32 34 18" strokeWidth="4"/></svg>
+                  </div>
                 </div>
-                
-                <DialogFooter>
+              )}
+            </>
+          )}
+          
+          {view === "custom" && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-2">
                   <Button 
-                    type="submit" 
-                    className="w-full"
-                    disabled={isSubmitting}
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setView("search")}
+                    className="h-8 w-8"
                   >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Saving...
-                      </>
-                    ) : (
-                      'Update Food'
-                    )}
+                    <ArrowLeft className="h-4 w-4" />
                   </Button>
-                </DialogFooter>
-              </form>
-            </Form>
-          </>
-        )}
+                  <div>
+                    <DialogTitle>Add Custom Food</DialogTitle>
+                    <Badge className="mt-1">
+                      Adding to {defaultMealType.charAt(0) + defaultMealType.slice(1).toLowerCase()}
+                    </Badge>
+                  </div>
+                </div>
+              </DialogHeader>
+              
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Food Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="E.g., Chicken Salad" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="calories"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Calories</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="number" min={0} step={1} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="carbs"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Carbs (g)</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="number" min={0} step={0.1} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="proteins"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Proteins (g)</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="number" min={0} step={0.1} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="fats"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Fats (g)</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="number" min={0} step={0.1} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <DialogFooter>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        'Add to Tracker'
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </>
+          )}
+          
+          {view === "edit" && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center">
+                  <Button variant="ghost" size="sm" className="mr-2" onClick={() => setView("search")}>
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div>
+                    <DialogTitle>Edit Food</DialogTitle>
+                    <div className="flex items-center gap-2">
+                      <DialogDescription>
+                        Update the food information.
+                      </DialogDescription>
+                      <Badge className="mt-1">
+                        {defaultMealType.charAt(0) + defaultMealType.slice(1).toLowerCase()}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+              </DialogHeader>
+              
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Food Name</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="calories"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Calories</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="number" min={0} step={1} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="carbs"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Carbs (g)</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="number" min={0} step={0.1} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="proteins"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Proteins (g)</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="number" min={0} step={0.1} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="fats"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Fats (g)</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="number" min={0} step={0.1} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  <DialogFooter>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        'Update Food'
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   )

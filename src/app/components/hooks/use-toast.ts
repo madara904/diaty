@@ -9,7 +9,7 @@ import type {
 } from "../ui/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY_IN_MS = 1000000
+const TOAST_REMOVE_DELAY_IN_MS = 3000 // 3 seconds
 
 type ToasterToast = ToastProps & {
   id: string
@@ -142,7 +142,7 @@ function dispatch(action: Action) {
 
 type Toast = Omit<ToasterToast, "id">
 
-function toast({ ...props }: Toast) {
+function toast({ variant = "default", ...props }: Toast) {
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -158,6 +158,7 @@ function toast({ ...props }: Toast) {
       ...props,
       id,
       open: true,
+      variant,
       onOpenChange: (open) => {
         if (!open) dismiss()
       },
