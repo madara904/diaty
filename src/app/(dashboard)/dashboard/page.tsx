@@ -43,28 +43,6 @@ function DashboardLoadingState() {
   );
 }
 
-// Fallback component for error states
-interface ErrorFallbackProps {
-  error: Error
-  resetErrorBoundary: () => void
-}
-
-function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps) {
-  console.error("Dashboard error:", error);
-  return (
-    <div className="flex flex-col items-center justify-center p-4">
-      <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
-      <p className="text-muted-foreground mb-4">We couldn't load your dashboard data</p>
-      <button 
-        onClick={resetErrorBoundary}
-        className="px-4 py-2 bg-primary text-primary-foreground rounded-md"
-      >
-        Try again
-      </button>
-    </div>
-  )
-}
-
 // Main Dashboard component
 export default function Dashboard() {
   const { data: session, status } = useSession()
@@ -82,36 +60,27 @@ export default function Dashboard() {
       const fetchData = async () => {
         setLoading(true);
         try {
-          // Check if user has completed onboarding
           const profileStatusRes = await fetch('/api/user/profile-status');
           if (!profileStatusRes.ok) {
-             // Handle error fetching profile status, maybe redirect or show error
-             console.error("Failed to fetch profile status", profileStatusRes.status);
-             // Optionally redirect or show an error message
-             // router.push('/error-fetching-profile');
-             setLoading(false);
-             return; // Stop fetching further if profile status fails
+            console.error("Failed to fetch profile status");
+            setLoading(false);
+            return;
           }
-          const profileStatus = await profileStatusRes.json();
           
+          const profileStatus = await profileStatusRes.json();
           if (!profileStatus.completed) {
             router.push('/onboarding');
-            return; // Stop fetching further if redirecting
+            return;
           }
           
-          // Fetch plan and nutrition data in parallel
           const today = new Date().toISOString().split('T')[0];
           const [planRes, nutritionDataRes] = await Promise.all([
             fetch('/api/user/plan'),
             fetch(`/api/nutrition-data?date=${today}`)
           ]);
           
-          // Handle potential fetch errors for plan and nutrition data
-          const planData = planRes.ok ? await planRes.json().catch(() => null) : null;
-          const nutritionData = nutritionDataRes.ok ? await nutritionDataRes.json().catch(() => null) : null;
-
-          if (!planRes.ok) console.error("Failed to fetch plan data", planRes.status);
-          if (!nutritionDataRes.ok) console.error("Failed to fetch nutrition data", nutritionDataRes.status);
+          const planData = planRes.ok ? await planRes.json() : null;
+          const nutritionData = nutritionDataRes.ok ? await nutritionDataRes.json() : null;
 
           setData({
             userData: session.user,
@@ -121,8 +90,6 @@ export default function Dashboard() {
           
         } catch (err) {
           console.error("Error loading dashboard data:", err);
-          // Handle error state, maybe set an error state variable to display an error message
-          // setError(err as Error);
         } finally {
           setLoading(false);
         }
@@ -136,7 +103,7 @@ export default function Dashboard() {
   }, [status, session, router]); // Dependencies for the effect
 
   // Render based on session status and loading state
-  if (status === 'loading') {
+  if (status === 'loading' || loading) {
      // Show loading state while NextAuth is determining session status
     return <DashboardLoadingState />;
   }
@@ -145,11 +112,6 @@ export default function Dashboard() {
      // If not authenticated after loading, the useEffect will redirect
      // We can return null or a minimal loading state here while redirect happens
     return null; // Or <DashboardLoadingState /> if you prefer
-  }
-
-  // If authenticated and not loading dashboard data yet, show loading skeleton
-  if (loading) {
-    return <DashboardLoadingState />;
   }
   
   // If authenticated and data is loaded, render the Overview
@@ -169,8 +131,10 @@ export default function Dashboard() {
   // Fallback if authenticated but essential data is somehow missing after loading
    return (
      <DashboardWrapper title="Dashboard">
-        {/* Optionally show an error message if data fetching failed after auth */}
-       <ErrorFallback error={new Error("Could not load essential dashboard data.")} resetErrorBoundary={() => {}} />
+        <div className="flex flex-col items-center justify-center p-4">
+          <h2 className="text-xl font-semibold mb-2">Unable to load dashboard data</h2>
+          <p className="text-muted-foreground">Please try refreshing the page</p>
+        </div>
      </DashboardWrapper>
    );
 }

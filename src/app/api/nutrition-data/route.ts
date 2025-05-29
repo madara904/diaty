@@ -14,7 +14,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, calories, carbs, proteins, fats, mealType, date } = body;
+    const { name, calories, carbs, proteins, fats, mealType, date, isManualEntry } = body;
     
     // Ensure we have a valid date
     if (!date) {
@@ -23,17 +23,37 @@ export async function POST(req: NextRequest) {
 
     const mealTypeEnum = mealType.toUpperCase() as MealType;
 
+    // If this is a manual entry, create it in SharedNutritionItem first
+    let sharedItemId = null;
+    if (isManualEntry) {
+      const sharedItem = await prisma.sharedNutritionItem.create({
+        data: {
+          name,
+          calories: Number(calories) || 0,
+          carbs: Number(carbs) || 0,
+          proteins: Number(proteins) || 0,
+          fats: Number(fats) || 0,
+          carbUnits: Number(carbs) / 10 || 0,
+          createdBy: user.id,
+          isVerified: false
+        }
+      });
+      sharedItemId = sharedItem.id;
+    }
+
+    // Create the nutrition data entry
     const newNutritionData = await prisma.nutritionData.create({
       data: {
         userId: user.id,
-        name: name || "Custom Food Item", // Add name field with fallback
-        date: new Date(date), // Convert string date to Date object
+        name: name || "Custom Food Item",
+        date: new Date(date),
         calories: Number(calories) || 0,
         carbs: Number(carbs) || 0,
         proteins: Number(proteins) || 0,
         fats: Number(fats) || 0,
         carbUnits: Number(carbs) / 10 || 0,
         mealType: mealTypeEnum,
+        sharedItemId: sharedItemId // This will be null for API-sourced items
       },
     });
 
