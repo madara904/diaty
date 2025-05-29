@@ -32,15 +32,24 @@ interface NutritionData {
   }
   meals:
     | {
-        [key: string]: Array<{
-          calories: number
-          carbs: number
-          proteins: number
-          fats: number
-          mealType: string
-        }>
+        [key: string]: Array<SavedFoodItem>
       }
     | undefined
+}
+
+interface SavedFoodItem {
+  id: string;
+  name: string;
+  calories: number;
+  carbs: number;
+  proteins: number;
+  fats: number;
+  mealType: "BREAKFAST" | "LUNCH" | "DINNER";
+  date: string;
+  createdAt: string;
+  isVerified: boolean;
+  isUserData: boolean;
+  isOtherUserData: boolean;
 }
 
 type MealType = "BREAKFAST" | "LUNCH" | "DINNER"
@@ -201,6 +210,9 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
       }
     }, false)
   }
+
+  // Extract meal items for the currently selected meal type
+  const currentMealItems = nutritionData?.meals?.[selectedMealType] || [];
 
   return (
     <div className={cn("bg-background text-foreground")}>
@@ -383,6 +395,7 @@ export default function Overview({ user, plan, initialNutritionData }: OverviewP
         currentDate={currentDate}
         onFoodAdded={() => mutateNutritionData()}
         defaultMealType={selectedMealType}
+        mealItems={currentMealItems}
       />
     </div>
   )

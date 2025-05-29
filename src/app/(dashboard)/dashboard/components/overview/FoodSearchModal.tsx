@@ -50,23 +50,25 @@ interface FoodSearchModalProps {
   currentDate: Date
   onFoodAdded: () => void
   defaultMealType?: "BREAKFAST" | "LUNCH" | "DINNER"
+  mealItems: SavedFoodItem[] | undefined;
 }
 
 interface OpenFoodProduct {
-  product_name: string
+  code: string;
+  product_name: string;
+  image_url?: string;
+  brand?: string;
   nutriments: {
-    "energy-kcal_100g"?: number
-    "energy-kcal"?: number
-    energy?: number
-    carbohydrates_100g?: number
-    carbohydrates?: number
-    proteins_100g?: number
-    proteins?: number
-    fat_100g?: number
-    fat?: number
-  }
-  image_url?: string
-  brand?: string
+    "energy-kcal_100g"?: number;
+    "energy-kcal"?: number;
+    energy?: number;
+    carbohydrates_100g?: number;
+    carbohydrates?: number;
+    proteins_100g?: number;
+    proteins?: number;
+    fat_100g?: number;
+    fat?: number;
+  };
 }
 
 interface SavedFoodItem {
@@ -84,23 +86,220 @@ interface SavedFoodItem {
   isOtherUserData: boolean
 }
 
+// Define FoodItem type alias here
+type FoodItem = OpenFoodProduct | SavedFoodItem;
+
+interface SelectedFood { /* ... */ }
+
 // Update the view type definition
 type ViewType = "search" | "detail" | "custom" | "edit";
+
+// Define MealType for clarity
+type MealType = "BREAKFAST" | "LUNCH" | "DINNER";
+
+// Search View Component
+function SearchView({ 
+  searchQuery, 
+  setSearchQuery, 
+  isSearching, 
+  handleSearch, 
+  showCustomFoodForm,
+  mealItems,
+  defaultMealType,
+  handleSelectFood,
+  handleEditFood,
+  handleDeleteFood,
+  openFoodResults,
+  communityResults,
+  searchError
+}: {
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
+  isSearching: boolean;
+  handleSearch: (e: React.FormEvent) => void;
+  showCustomFoodForm: () => void;
+  mealItems: SavedFoodItem[] | undefined;
+  defaultMealType: string;
+  handleSelectFood: (food: FoodItem) => void;
+  handleEditFood: (item: SavedFoodItem) => void;
+  handleDeleteFood: (id: string) => void;
+  openFoodResults: OpenFoodProduct[];
+  communityResults: SavedFoodItem[];
+  searchError: string;
+}) {
+  return (
+    <>
+      <DialogHeader className="mb-4">
+        <DialogTitle>Add Food Intake</DialogTitle>
+        <DialogDescription>
+          Search for food or add a custom entry.
+        </DialogDescription>
+      </DialogHeader>
+      
+      <div className="space-y-4 mt-4">
+        <form onSubmit={handleSearch} className="flex gap-2">
+          <Input
+            placeholder="Search for food..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="flex-1"
+          />
+          <Button 
+            type="submit" 
+            size="icon"
+            disabled={isSearching}
+          >
+            {isSearching ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+          </Button>
+        </form>
+        
+        <div className="mt-4">
+          <Button 
+            variant="outline" 
+            onClick={showCustomFoodForm}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Add Custom Food
+          </Button>
+        </div>
+        
+        {/* Display Items for the current meal type */}
+        {mealItems && mealItems.length > 0 && !searchQuery && (
+          <div className="space-y-2">
+            <h3 className="font-medium">Items for {defaultMealType.charAt(0) + defaultMealType.slice(1).toLowerCase()}</h3>
+            <div className="space-y-2">
+              {mealItems.map((item: SavedFoodItem) => (
+                <Card key={item.id} className="cursor-pointer hover:bg-accent/50 transition-colors">
+                  <CardContent className="p-3" onClick={() => handleSelectFood(item)}>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h4 className="font-medium">{item.name || "Unnamed Food"}</h4>
+                        <p className="text-sm text-muted-foreground">
+                           {Math.round(Number(item.calories))} kcal
+                        </p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleEditFood(item); }} className="hover:bg-accent">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={(e) => { e.stopPropagation(); handleDeleteFood(item.id); }}
+                          className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={(e) => { e.stopPropagation(); handleSelectFood(item); }}
+                          className="text-emerald-600 border-emerald-300 hover:bg-accent/50 transition-colors"
+                        >
+                          Select
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+      
+        {/* Search Results */}
+        <div className="mt-4">
+          {searchQuery && (
+            <>
+              {isSearching ? (
+                <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+                  <p className="text-sm text-muted-foreground text-center">
+                    Searching OpenFoodFacts database...<br />
+                    This may take a few seconds
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {searchError && (
+                    <div className="py-8 text-center">
+                      <p className="text-muted-foreground">{searchError}</p>
+                      <Button variant="link" onClick={showCustomFoodForm}>
+                        Add as a custom food
+                      </Button>
+                    </div>
+                  )}
+                  {!searchError && (openFoodResults.length > 0 || communityResults.length > 0) && (
+                    <div className="space-y-2 mt-4">
+                      <h3 className="text-sm font-medium">Search Results</h3>
+                      {[...communityResults, ...openFoodResults].map((product, index) => {
+                        const isCommunity = (product as any).id !== undefined;
+                        return (
+                          <Card key={isCommunity ? `community-${(product as SavedFoodItem).id}` : `open-${index}`} className="cursor-pointer hover:bg-accent/50 transition-colors">
+                            <CardContent className="p-3" onClick={() => handleSelectFood(product)}>
+                              <div className="flex justify-between items-center">
+                                <div>
+                                  <h4 className="font-medium flex items-center gap-2">
+                                    {isCommunity ? (product as SavedFoodItem).name : (product as OpenFoodProduct).product_name}
+                                    {isCommunity && (
+                                      <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-200 ml-2">Community</Badge>
+                                    )}
+                                  </h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {isCommunity
+                                      ? null
+                                      : (product as OpenFoodProduct).brand && <span className="mr-2">{(product as OpenFoodProduct).brand}</span>}
+                                    <span className="font-medium">
+                                      {isCommunity
+                                        ? Math.round(Number((product as SavedFoodItem).calories))
+                                        : Math.round(Number((product as OpenFoodProduct).nutriments["energy-kcal_100g"]))} kcal/100g
+                                    </span>
+                                  </p>
+                                </div>
+                                <Button 
+                                  size="sm" 
+                                  variant="default"
+                                  className="border-emerald-300 hover:bg-emerald-600"
+                                >
+                                  Select
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
 
 export default function FoodSearchModal({ 
   isOpen, 
   onClose, 
   currentDate,
   onFoodAdded,
-  defaultMealType = "BREAKFAST"
+  defaultMealType = "BREAKFAST",
+  mealItems
 }: FoodSearchModalProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [openFoodResults, setOpenFoodResults] = useState<OpenFoodProduct[]>([])
   const [savedFoodResults, setSavedFoodResults] = useState<SavedFoodItem[]>([])
-  const [selectedFood, setSelectedFood] = useState<OpenFoodProduct | SavedFoodItem | null>(null)
+  const [selectedFood, setSelectedFood] = useState<SavedFoodItem | null>(null)
   const [isSearching, setIsSearching] = useState(false)
   const [grams, setGrams] = useState(100)
-  const [view, setView] = useState<ViewType>("search")
+  const [view, setView] = useState<ViewType>(mealItems && mealItems.length > 0 ? "search" : "search")
   const [editingItemId, setEditingItemId] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [searchError, setSearchError] = useState("")
@@ -108,26 +307,6 @@ export default function FoodSearchModal({
   const [communityResults, setCommunityResults] = useState<SavedFoodItem[]>([])
   const [showSuccess, setShowSuccess] = useState(false);
   
-  // Use SWR for fetching recent food items
-  const formattedDate = format(currentDate, "yyyy-MM-dd");
-  const recentItemsUrl = `/api/nutrition-data/recent?limit=10&date=${formattedDate}`;
-  
-  const { data: recentItems, isLoading: isLoadingRecent } = useSWR(
-    isOpen ? recentItemsUrl : null,
-    async (url) => {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch recent items');
-      }
-      return response.json();
-    },
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 60000, // 1 minute
-      revalidateIfStale: false,
-    }
-  );
-
   // Initialize form with default values
   const form = useForm<FoodIntakeFormData>({
     resolver: zodResolver(foodIntakeSchema),
@@ -193,43 +372,80 @@ export default function FoodSearchModal({
   
   // Calculate nutrition based on grams
   const calculateNutrition = (value: number | undefined) => {
-    return value ? ((value / 100) * grams).toFixed(1) : "0"
+    return value ? ((value / 100) * grams) : 0;
   }
   
-  // Handle selecting a food item from search results
-  const handleSelectFood = (food: OpenFoodProduct | SavedFoodItem) => {
-    setSelectedFood(food)
-    setView("detail")
-    setGrams(100)
+  const handleOpenFoodSelect = (food: OpenFoodProduct): SavedFoodItem => {
+    const caloriesPer100 = food.nutriments["energy-kcal_100g"] || 
+                          food.nutriments["energy-kcal"] || 
+                          (food.nutriments.energy ? food.nutriments.energy / 4.184 : 0);
     
-    if ('product_name' in food) {
-      // OpenFood product
-      const calories = food.nutriments["energy-kcal_100g"] || 
-                       food.nutriments["energy-kcal"] || 
-                       (food.nutriments.energy ? food.nutriments.energy / 4.184 : 0)
-      
-      const carbs = food.nutriments.carbohydrates_100g || food.nutriments.carbohydrates || 0
-      const proteins = food.nutriments.proteins_100g || food.nutriments.proteins || 0
-      const fats = food.nutriments.fat_100g || food.nutriments.fat || 0
-      
-      form.setValue("name", food.product_name)
-      form.setValue("calories", parseFloat(calculateNutrition(calories)))
-      form.setValue("carbs", parseFloat(calculateNutrition(carbs)))
-      form.setValue("proteins", parseFloat(calculateNutrition(proteins)))
-      form.setValue("fats", parseFloat(calculateNutrition(fats)))
-      // Always use the defaultMealType
-      form.setValue("mealType", defaultMealType)
-    } else {
-      // Saved food item
-      form.setValue("name", food.name)
-      form.setValue("calories", parseFloat(calculateNutrition(food.calories)))
-      form.setValue("carbs", parseFloat(calculateNutrition(food.carbs)))
-      form.setValue("proteins", parseFloat(calculateNutrition(food.proteins)))
-      form.setValue("fats", parseFloat(calculateNutrition(food.fats)))
-      // Always use the defaultMealType
-      form.setValue("mealType", defaultMealType)
-    }
+    const carbsPer100 = food.nutriments.carbohydrates_100g || food.nutriments.carbohydrates || 0;
+    const proteinsPer100 = food.nutriments.proteins_100g || food.nutriments.proteins || 0;
+    const fatsPer100 = food.nutriments.fat_100g || food.nutriments.fat || 0;
+
+    return {
+      id: food.code,
+      name: food.product_name || "Unnamed OpenFood Item",
+      calories: parseFloat(caloriesPer100.toFixed(1)),
+      carbs: parseFloat(carbsPer100.toFixed(1)),
+      proteins: parseFloat(proteinsPer100.toFixed(1)),
+      fats: parseFloat(fatsPer100.toFixed(1)),
+      mealType: defaultMealType,
+      date: format(currentDate, "yyyy-MM-dd"),
+      createdAt: new Date().toISOString(),
+      isVerified: false,
+      isUserData: false,
+      isOtherUserData: false
+    };
+  };
+
+  const handleSavedFoodSelect = (food: SavedFoodItem): SavedFoodItem => {
+    // Return the existing SavedFoodItem, potentially updating date/mealType later
+    return {
+      ...food,
+      date: format(currentDate, "yyyy-MM-dd"), // Update date to current selected date
+      mealType: defaultMealType, // Update meal type to current selected meal type
+    };
+  };
+
+  // Use the defined FoodItem type
+  function isOpenFoodProduct(food: FoodItem): food is OpenFoodProduct {
+    return "product_name" in food && "nutriments" in food;
   }
+
+  // Handle selecting a food item (Use the defined FoodItem type)
+  const handleSelectFood = (food: FoodItem) => {
+    let itemToSelect: SavedFoodItem;
+
+    if (isOpenFoodProduct(food)) {
+      itemToSelect = handleOpenFoodSelect(food);
+    } else {
+      itemToSelect = handleSavedFoodSelect(food);
+    }
+
+    // Set grams based on whether it's a community item (assume 100g for OpenFoodFacts, might need adjustment for community)
+    // For now, default to 100g, the user can adjust
+    setGrams(100);
+
+    // Set form values based on the item to select (nutrition per 100g/serving)
+    // The useEffect will handle calculating nutrition for the specific grams
+    form.reset({
+      name: itemToSelect.name,
+      calories: itemToSelect.calories, // per 100g/serving
+      carbs: itemToSelect.carbs,       // per 100g/serving
+      proteins: itemToSelect.proteins, // per 100g/serving
+      fats: itemToSelect.fats,        // per 100g/serving
+      mealType: defaultMealType, // Use the current default meal type
+      date: format(currentDate, "yyyy-MM-dd"), // Use the current date
+    });
+
+    // Set the selected food state with the consistent SavedFoodItem structure
+    setSelectedFood(itemToSelect);
+
+    // Change view to detail
+    setView("detail");
+  };
   
   // Handle adding a custom food
   const showCustomFoodForm = () => {
@@ -277,9 +493,6 @@ export default function FoodSearchModal({
         title: "Success",
         description: "Food item deleted successfully",
       })
-      
-      // Revalidate data with SWR
-      mutate(recentItemsUrl);
       
       // Call the onFoodAdded callback to refresh the dashboard
       onFoodAdded()
@@ -339,9 +552,6 @@ export default function FoodSearchModal({
       // Reset the form and close the modal
       form.reset()
       
-      // Revalidate SWR cache
-      mutate(recentItemsUrl);
-      
       setShowSuccess(true);
       setTimeout(() => {
         setShowSuccess(false);
@@ -372,32 +582,42 @@ export default function FoodSearchModal({
     }
   }
   
-  // Update nutrition values when grams change
+  // Update nutrition values when grams change or selectedFood changes
   useEffect(() => {
-    if (selectedFood && view === "detail") {
-      if ('product_name' in selectedFood) {
-        // OpenFood product
-        const calories = selectedFood.nutriments["energy-kcal_100g"] || 
-                         selectedFood.nutriments["energy-kcal"] || 
-                         (selectedFood.nutriments.energy ? selectedFood.nutriments.energy / 4.184 : 0)
-        
-        const carbs = selectedFood.nutriments.carbohydrates_100g || selectedFood.nutriments.carbohydrates || 0
-        const proteins = selectedFood.nutriments.proteins_100g || selectedFood.nutriments.proteins || 0
-        const fats = selectedFood.nutriments.fat_100g || selectedFood.nutriments.fat || 0
-        
-        form.setValue("calories", parseFloat(calculateNutrition(calories)))
-        form.setValue("carbs", parseFloat(calculateNutrition(carbs)))
-        form.setValue("proteins", parseFloat(calculateNutrition(proteins)))
-        form.setValue("fats", parseFloat(calculateNutrition(fats)))
-      } else {
-        // Saved food item
-        form.setValue("calories", parseFloat(calculateNutrition(selectedFood.calories)))
-        form.setValue("carbs", parseFloat(calculateNutrition(selectedFood.carbs)))
-        form.setValue("proteins", parseFloat(calculateNutrition(selectedFood.proteins)))
-        form.setValue("fats", parseFloat(calculateNutrition(selectedFood.fats)))
-      }
+    if (selectedFood && view === "detail" && !isNaN(grams) && grams > 0) {
+      // selectedFood is now always SavedFoodItem | null
+      // Nutrition values on selectedFood are per 100g or per serving from saved item
+      const calculatedCalories = (selectedFood.calories / 100) * grams;
+      const calculatedCarbs = (selectedFood.carbs / 100) * grams;
+      const calculatedProteins = (selectedFood.proteins / 100) * grams;
+      const calculatedFats = (selectedFood.fats / 100) * grams;
+
+      // Update the form fields with calculated values, rounded to whole numbers
+      form.setValue("calories", Math.round(calculatedCalories));
+      form.setValue("carbs", Math.round(calculatedCarbs));
+      form.setValue("proteins", Math.round(calculatedProteins));
+      form.setValue("fats", Math.round(calculatedFats));
+
+      // Keep other form values (name, mealType, date) from the selected item
+      form.setValue("name", selectedFood.name);
+      // Explicitly cast mealType to the correct union type if needed
+      form.setValue("mealType", selectedFood.mealType as MealType);
+      form.setValue("date", selectedFood.date);
+
+    } else if (selectedFood && view === "detail" && (isNaN(grams) || grams <= 0)) {
+       // If grams is not a valid number or 0 or less, reset calculated nutrition to 0
+       form.setValue("calories", 0);
+       form.setValue("carbs", 0);
+       form.setValue("proteins", 0);
+       form.setValue("fats", 0);
+       // Keep name, mealType, date
+       form.setValue("name", selectedFood.name);
+       // Explicitly cast mealType to the correct union type if needed
+       form.setValue("mealType", selectedFood.mealType as MealType);
+       form.setValue("date", selectedFood.date);
     }
-  }, [grams, selectedFood, view, form])
+    // Note: If view is not 'detail' or selectedFood is null, this effect does nothing, which is correct.
+  }, [grams, selectedFood, view, form]);
 
   // Reset state when dialog closes
   useEffect(() => {
@@ -413,187 +633,58 @@ export default function FoodSearchModal({
   useEffect(() => {
     // Update the date field whenever the currentDate prop changes
     form.setValue("date", format(currentDate, "yyyy-MM-dd"));
-    
-    // Revalidate the recent items data when the date changes
-    if (isOpen) {
-      mutate(recentItemsUrl);
-      console.log("Fetching saved items for date:", formattedDate);
+  }, [currentDate, form]);
+
+  // Effect to clear search results when query is empty
+  useEffect(() => {
+    if (searchQuery === "") {
+      setOpenFoodResults([]);
+      setCommunityResults([]);
+      setSearchError("");
     }
-  }, [currentDate, form, isOpen, recentItemsUrl, mutate, formattedDate]);
+  }, [searchQuery]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => {
+      if (!open) {
+        onClose();
+      } else {
+        setView(mealItems && mealItems.length > 0 ? "search" : "search");
+        setSearchQuery("");
+        setOpenFoodResults([]);
+        setCommunityResults([]);
+        setSearchError("");
+        setSelectedFood(null);
+        setGrams(100);
+        form.reset({
+          name: "",
+          calories: 0,
+          carbs: 0,
+          proteins: 0,
+          fats: 0,
+          mealType: defaultMealType,
+          date: format(currentDate, "yyyy-MM-dd"),
+        });
+      }
+    }}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
-        <div className="overflow-y-auto flex-1 p-6">
+        <div className="overflow-y-auto flex-1 p-6 no-scrollbar">
           {view === "search" && (
-            <>
-              <DialogHeader className="mb-4">
-                <DialogTitle>Add Food Intake</DialogTitle>
-                <DialogDescription>
-                  Search for food or add a custom entry.
-                </DialogDescription>
-              </DialogHeader>
-              
-              <div className="space-y-4 mt-4">
-                <form onSubmit={handleSearch} className="flex gap-2">
-                  <Input
-                    placeholder="Search for food..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button 
-                    type="submit" 
-                    size="icon"
-                    disabled={isSearching}
-                  >
-                    {isSearching ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Search className="h-4 w-4" />
-                    )}
-                  </Button>
-                </form>
-                
-                <div className="mt-4">
-                  <Button 
-                    variant="outline" 
-                    onClick={showCustomFoodForm}
-                    className="w-full flex items-center justify-center gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Custom Food
-                  </Button>
-                </div>
-                
-                {/* Recent Items (always shown) */}
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium">Recently Added</h3>
-                  {isLoadingRecent ? (
-                    <div className="flex justify-center items-center py-8">
-                      <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-                    </div>
-                  ) : recentItems && recentItems.length > 0 ? (
-                    <div className="space-y-2">
-                      {recentItems.map((item: SavedFoodItem) => (
-                        <Card key={item.id} className="hover:bg-accent/50 transition-colors">
-                          <CardContent className="p-3">
-                            <div className="flex justify-between items-center">
-                              <div className="cursor-pointer" onClick={() => handleSelectFood(item)}>
-                                <h4 className="font-medium">{item.name || "Unnamed Food"}</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  {item.calories} kcal • {format(new Date(item.date), "MMM d")}
-                                </p>
-                                <Badge variant="outline" className="mt-1 bg-emerald-50 text-emerald-700 border-emerald-200">
-                                  {item.mealType.charAt(0) + item.mealType.slice(1).toLowerCase()}
-                                </Badge>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button size="sm" variant="ghost" onClick={() => handleEditFood(item)} className="hover:bg-accent">
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="ghost" 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteFood(item.id);
-                                  }}
-                                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                                >
-                                  <Trash className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline"
-                                  onClick={() => handleSelectFood(item)}
-                                  className="text-emerald-600 border-emerald-300 hover:bg-accent/50 transition-colors"
-                                >
-                                  Select
-                                </Button>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground py-8 text-center">
-                      Your recently added foods will appear here.
-                    </p>
-                  )}
-                </div>
-              
-                {/* Search Results (shown only when searching) */}
-                <div className="mt-4">
-                  {searchQuery && (
-                    <>
-                      {isSearching ? (
-                        <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                          <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
-                          <p className="text-sm text-muted-foreground text-center">
-                            Searching OpenFoodFacts database...<br />
-                            This may take a few seconds
-                          </p>
-                        </div>
-                      ) : (
-                        <>
-                          {searchError && (
-                            <div className="py-8 text-center">
-                              <p className="text-muted-foreground">{searchError}</p>
-                              <Button variant="link" onClick={showCustomFoodForm}>
-                                Add as a custom food
-                              </Button>
-                            </div>
-                          )}
-                          {!searchError && (openFoodResults.length > 0 || communityResults.length > 0) && (
-                            <div className="space-y-2 mt-4">
-                              <h3 className="text-sm font-medium">Search Results</h3>
-                              {[...communityResults, ...openFoodResults].map((product, index) => {
-                                const isCommunity = (product as any).id !== undefined;
-                                return (
-                                  <Card key={isCommunity ? `community-${(product as SavedFoodItem).id}` : `open-${index}`} className="cursor-pointer hover:bg-accent/50 transition-colors">
-                                    <CardContent className="p-3" onClick={() => handleSelectFood(product)}>
-                                      <div className="flex justify-between items-center">
-                                        <div>
-                                          <h4 className="font-medium flex items-center gap-2">
-                                            {isCommunity ? (product as SavedFoodItem).name : (product as OpenFoodProduct).product_name}
-                                            {isCommunity && (
-                                              <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-200 ml-2">Community</Badge>
-                                            )}
-                                          </h4>
-                                          <p className="text-sm text-muted-foreground">
-                                            {isCommunity
-                                              ? null
-                                              : (product as OpenFoodProduct).brand && <span className="mr-2">{(product as OpenFoodProduct).brand}</span>}
-                                            <span className="font-medium">
-                                              {isCommunity
-                                                ? Math.round(Number((product as SavedFoodItem).calories))
-                                                : Math.round(Number((product as OpenFoodProduct).nutriments["energy-kcal_100g"]))} kcal/100g
-                                            </span>
-                                          </p>
-                                        </div>
-                                        <Button 
-                                          size="sm" 
-                                          variant="default"
-                                          className="border-emerald-300 hover:bg-emerald-600"
-                                        >
-                                          Select
-                                        </Button>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            </>
+            <SearchView 
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              isSearching={isSearching}
+              handleSearch={handleSearch}
+              showCustomFoodForm={showCustomFoodForm}
+              mealItems={mealItems}
+              defaultMealType={defaultMealType}
+              handleSelectFood={handleSelectFood}
+              handleEditFood={handleEditFood}
+              handleDeleteFood={handleDeleteFood}
+              openFoodResults={openFoodResults}
+              communityResults={communityResults}
+              searchError={searchError}
+            />
           )}
           
           {view === "detail" && selectedFood && (
@@ -609,11 +700,7 @@ export default function FoodSearchModal({
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
                   <div>
-                    <DialogTitle>
-                      {'product_name' in selectedFood 
-                        ? selectedFood.product_name 
-                        : selectedFood.name}
-                    </DialogTitle>
+                    <DialogTitle>{selectedFood.name}</DialogTitle>
                     <Badge className="mt-1">
                       Adding to {defaultMealType.charAt(0) + defaultMealType.slice(1).toLowerCase()}
                     </Badge>
