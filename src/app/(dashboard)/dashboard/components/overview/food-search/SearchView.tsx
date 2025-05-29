@@ -41,6 +41,11 @@ export function SearchView({
   communityResults,
   searchError
 }: SearchViewProps) {
+  // Filter community results to only show custom foods (isUserData or isOtherUserData)
+  const filteredCommunityResults = communityResults.filter(
+    food => food.isUserData || food.isOtherUserData
+  );
+
   return (
     <>
       <DialogHeader className="mb-4">
@@ -148,45 +153,75 @@ export function SearchView({
                       </Button>
                     </div>
                   )}
-                  {!searchError && (openFoodResults.length > 0 || communityResults.length > 0) && (
-                    <div className="space-y-2 mt-4">
-                      <h3 className="text-sm font-medium">Search Results</h3>
-                      {[...communityResults, ...openFoodResults].map((product, index) => {
-                        const isCommunity = (product as any).id !== undefined;
-                        return (
-                          <Card key={isCommunity ? `community-${(product as SavedFoodItem).id}` : `open-${index}`} className="cursor-pointer hover:bg-accent/50 transition-colors">
-                            <CardContent className="p-3" onClick={() => handleSelectFood(product)}>
-                              <div className="flex justify-between items-center">
-                                <div>
-                                  <h4 className="font-medium flex items-center gap-2">
-                                    {isCommunity ? (product as SavedFoodItem).name : (product as OpenFoodProduct).product_name}
-                                    {isCommunity && (
-                                      <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-200 ml-2">Community</Badge>
-                                    )}
-                                  </h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    {isCommunity
-                                      ? null
-                                      : (product as OpenFoodProduct).brand && <span className="mr-2">{(product as OpenFoodProduct).brand}</span>}
-                                    <span className="font-medium">
-                                      {isCommunity
-                                        ? Math.round(Number((product as SavedFoodItem).calories))
-                                        : Math.round(Number((product as OpenFoodProduct).nutriments["energy-kcal_100g"]))} kcal/100g
-                                    </span>
-                                  </p>
+                  {!searchError && (openFoodResults.length > 0 || filteredCommunityResults.length > 0) && (
+                    <div className="space-y-4 mt-4">
+                      {/* OpenFoodFacts Results */}
+                      {openFoodResults.length > 0 && (
+                        <div className="space-y-2">
+                          <h3 className="text-sm font-medium">OpenFoodFacts Results</h3>
+                          {openFoodResults.map((product, index) => (
+                            <Card key={`open-${index}`} className="cursor-pointer hover:bg-accent/50 transition-colors">
+                              <CardContent className="p-3" onClick={() => handleSelectFood(product)}>
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <h4 className="font-medium">
+                                      {product.product_name}
+                                      {product.brand && <span className="text-sm text-muted-foreground ml-2">({product.brand})</span>}
+                                    </h4>
+                                    <p className="text-sm text-muted-foreground">
+                                      <span className="font-medium">
+                                        {Math.round(Number(product.nutriments["energy-kcal_100g"]))} kcal/100g
+                                      </span>
+                                    </p>
+                                  </div>
+                                  <Button 
+                                    size="sm" 
+                                    variant="default"
+                                    className="border-emerald-300 hover:bg-emerald-600"
+                                  >
+                                    Select
+                                  </Button>
                                 </div>
-                                <Button 
-                                  size="sm" 
-                                  variant="default"
-                                  className="border-emerald-300 hover:bg-emerald-600"
-                                >
-                                  Select
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        );
-                      })}
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Community Results (Custom Foods) */}
+                      {filteredCommunityResults.length > 0 && (
+                        <div className="space-y-2">
+                          <h3 className="text-sm font-medium">Community Custom Foods</h3>
+                          {filteredCommunityResults.map((food) => (
+                            <Card key={`community-${food.id}`} className="cursor-pointer hover:bg-accent/50 transition-colors">
+                              <CardContent className="p-3" onClick={() => handleSelectFood(food)}>
+                                <div className="flex justify-between items-center">
+                                  <div>
+                                    <h4 className="font-medium flex items-center gap-2">
+                                      {food.name}
+                                      <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-200">
+                                        {food.isUserData ? 'Your Custom Food' : 'Community Food'}
+                                      </Badge>
+                                    </h4>
+                                    <p className="text-sm text-muted-foreground">
+                                      <span className="font-medium">
+                                        {Math.round(Number(food.calories))} kcal/100g
+                                      </span>
+                                    </p>
+                                  </div>
+                                  <Button 
+                                    size="sm" 
+                                    variant="default"
+                                    className="border-emerald-300 hover:bg-emerald-600"
+                                  >
+                                    Select
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </>

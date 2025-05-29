@@ -384,13 +384,19 @@ export default function FoodSearchModal({
     const proteinsPer100 = food.nutriments.proteins_100g || food.nutriments.proteins || 0;
     const fatsPer100 = food.nutriments.fat_100g || food.nutriments.fat || 0;
 
+    // Safely convert values to numbers and handle undefined/null cases
+    const safeToFixed = (value: number | undefined | null): number => {
+      if (value === undefined || value === null) return 0;
+      return parseFloat(Number(value).toFixed(1));
+    };
+
     return {
       id: food.code,
       name: food.product_name || "Unnamed OpenFood Item",
-      calories: parseFloat(caloriesPer100.toFixed(1)),
-      carbs: parseFloat(carbsPer100.toFixed(1)),
-      proteins: parseFloat(proteinsPer100.toFixed(1)),
-      fats: parseFloat(fatsPer100.toFixed(1)),
+      calories: safeToFixed(caloriesPer100),
+      carbs: safeToFixed(carbsPer100),
+      proteins: safeToFixed(proteinsPer100),
+      fats: safeToFixed(fatsPer100),
       mealType: defaultMealType,
       date: format(currentDate, "yyyy-MM-dd"),
       createdAt: new Date().toISOString(),
@@ -536,7 +542,10 @@ export default function FoodSearchModal({
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(data),
+          body: JSON.stringify({
+            ...data,
+            isManualEntry: view === "custom" || (selectedFood && !isOpenFoodProduct(selectedFood))
+          }),
         })
         
         if (!response.ok) {
