@@ -1,9 +1,8 @@
 "use client"
 
 import Overview from "./components/overview/Overview"
-import React, { useEffect, useState, useCallback } from "react"
+import React, { useEffect, useState } from "react"
 import DashboardWrapper from "./components/DashboardWrapper"
-import { ErrorBoundary } from "react-error-boundary" 
 import { useSession } from "next-auth/react"
 import { User } from "next-auth"
 import { useRouter } from "next/navigation"
@@ -66,21 +65,6 @@ function ErrorFallback({ error, resetErrorBoundary }: ErrorFallbackProps) {
   )
 }
 
-// Cache for API responses to reduce duplicate requests
-const apiCache = new Map();
-
-// Fetch with cache to prevent duplicate requests
-const fetchWithCache = async (url: string) => {
-  if (apiCache.has(url)) {
-    return apiCache.get(url);
-  }
-
-  const response = await fetch(url);
-  const data = await response.json();
-  apiCache.set(url, data);
-  return data;
-};
-
 // Main Dashboard component
 export default function Dashboard() {
   const { data: session, status } = useSession()
@@ -92,68 +76,101 @@ export default function Dashboard() {
   })
   const [loading, setLoading] = useState(true)
   
-  // Clear cache when component is unmounted
-  useEffect(() => {
-    return () => {
-      apiCache.clear();
-    };
-  }, []);
-  
-  const fetchDashboardData = useCallback(async () => {
-    if (!session?.user) return;
-    
-    try {
-      // Check if user has completed onboarding (using cache)
-      const profileStatus = await fetchWithCache('/api/user/profile-status');
-      
-      if (!profileStatus.completed) {
-        router.push('/onboarding');
-        return;
-      }
-      
-      // Fetch plan and nutrition data in parallel (using cache)
-      const today = new Date().toISOString().split('T')[0];
-      const [planData, nutritionData] = await Promise.all([
-        fetchWithCache('/api/user/plan'),
-        fetchWithCache(`/api/nutrition-data?date=${today}`)
-      ]);
-      
-      setData({
-        userData: session.user,
-        plan: planData,
-        nutritionData: nutritionData
-      });
-      
-      setLoading(false);
-    } catch (err) {
-      console.error("Error loading dashboard data:", err);
-      setLoading(false);
-    }
-  }, [session, router]);
-  
+  // New useEffect to fetch data when session is available
   useEffect(() => {
     if (status === 'authenticated' && session?.user) {
-      fetchDashboardData();
+      const fetchData = async () => {
+        setLoading(true);
+        try {
+          // Check if user has completed onboarding
+          const profileStatusRes = await fetch('/api/user/profile-status');
+          if (!profileStatusRes.ok) {
+             // Handle error fetching profile status, maybe redirect or show error
+             console.error("Failed to fetch profile status", profileStatusRes.status);
+             // Optionally redirect or show an error message
+             // router.push('/error-fetching-profile');
+             setLoading(false);
+             return; // Stop fetching further if profile status fails
+          }
+          const profileStatus = await profileStatusRes.json();
+          
+          if (!profileStatus.completed) {
+            router.push('/onboarding');
+            return; // Stop fetching further if redirecting
+          }
+          
+          // Fetch plan and nutrition data in parallel
+          const today = new Date().toISOString().split('T')[0];
+          const [planRes, nutritionDataRes] = await Promise.all([
+            fetch('/api/user/plan'),
+            fetch(`/api/nutrition-data?date=${today}`)
+          ]);
+          
+          // Handle potential fetch errors for plan and nutrition data
+          const planData = planRes.ok ? await planRes.json().catch(() => null) : null;
+          const nutritionData = nutritionDataRes.ok ? await nutritionDataRes.json().catch(() => null) : null;
+
+          if (!planRes.ok) console.error("Failed to fetch plan data", planRes.status);
+          if (!nutritionDataRes.ok) console.error("Failed to fetch nutrition data", nutritionDataRes.status);
+
+          setData({
+            userData: session.user,
+            plan: planData,
+            nutritionData: nutritionData
+          });
+          
+        } catch (err) {
+          console.error("Error loading dashboard data:", err);
+          // Handle error state, maybe set an error state variable to display an error message
+          // setError(err as Error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      
+      fetchData();
     } else if (status === 'unauthenticated') {
+       // This client component handles redirect for unauthenticated users
       router.push('/sign-in');
     }
-  }, [status, session, router, fetchDashboardData]);
+  }, [status, session, router]); // Dependencies for the effect
 
-  return (
-    <DashboardWrapper title="Dashboard">
-      <ErrorBoundary FallbackComponent={ErrorFallback}>
-        {loading ? (
-          <DashboardLoadingState />
-        ) : (
-          data.userData && data.nutritionData && (
-            <Overview 
-              user={data.userData} 
-              plan={data.plan} 
-              initialNutritionData={data.nutritionData}
-            />
-          )
-        )}
-      </ErrorBoundary>
-    </DashboardWrapper>
-  )
+  // Render based on session status and loading state
+  if (status === 'loading') {
+     // Show loading state while NextAuth is determining session status
+    return <DashboardLoadingState />;
+  }
+
+  if (!session?.user) {
+     // If not authenticated after loading, the useEffect will redirect
+     // We can return null or a minimal loading state here while redirect happens
+    return null; // Or <DashboardLoadingState /> if you prefer
+  }
+
+  // If authenticated and not loading dashboard data yet, show loading skeleton
+  if (loading) {
+    return <DashboardLoadingState />;
+  }
+  
+  // If authenticated and data is loaded, render the Overview
+  // Ensure essential data (nutritionData) is available before rendering Overview
+  if (data.userData && data.nutritionData) {
+    return (
+      <DashboardWrapper title="Dashboard">
+          <Overview 
+            user={data.userData} 
+            plan={data.plan} 
+            initialNutritionData={data.nutritionData}
+          />
+      </DashboardWrapper>
+    );
+  }
+
+  // Fallback if authenticated but essential data is somehow missing after loading
+   return (
+     <DashboardWrapper title="Dashboard">
+        {/* Optionally show an error message if data fetching failed after auth */}
+       <ErrorFallback error={new Error("Could not load essential dashboard data.")} resetErrorBoundary={() => {}} />
+     </DashboardWrapper>
+   );
 }
